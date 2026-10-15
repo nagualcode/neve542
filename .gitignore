@@ -20,6 +20,6 @@ __pycache__/
 **/.cargo/config.toml
 
 # Agent directories
-.agents/
-**/.agents/
+.agents/*
+!.agents/skills/
 
