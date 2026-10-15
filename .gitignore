@@ -11,6 +11,10 @@ __pycache__/
 **/__pycache__/
 *.pyc
 
+# Archives
+*.zip
+
+
 # Local cargo configs
 .cargo/config.toml
 **/.cargo/config.toml
