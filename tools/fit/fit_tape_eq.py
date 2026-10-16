@@ -32,9 +32,26 @@ def peak(f, fc, gdb, q):
     return (s * s + s * A / q + 1) / (s * s + s / (A * q) + 1)
 
 
-def model(p, f):
-    fh, qh, fb, gb, qb, fl, ql = p
-    return 20 * np.log10(np.abs(hp2(f, fh, qh) * peak(f, fb, gb, qb) * lp2(f, fl, ql)))
+def shelf(f, fc, gdb):
+    g = 10 ** (gdb / 40)
+    return (1 + 1j * f / (fc / g)) / (1 + 1j * f / (fc * g))
+
+
+def warp(f, fw, fs):
+    """Analog frequency seen by a bilinear section prewarped at fw (as in filters.rs)."""
+    if fs is None:
+        return f
+    fw = min(fw, 0.4 * fs)
+    return fw / np.tan(np.pi * fw / fs) * np.tan(np.pi * np.asarray(f) / fs)
+
+
+def model(p, f, fs=None):
+    """Contour response in dB; with fs, the digital (bilinear) response at that internal rate."""
+    fh, qh, fb, gb, qb, fl, ql = p[:7]
+    h = hp2(warp(f, fh, fs), fh, qh) * peak(warp(f, fb, fs), fb, gb, qb) * lp2(warp(f, fl, fs), fl, ql)
+    if len(p) > 7:  # recovery HF shelf (compensates clip compression at 0 dBu)
+        h = h * shelf(warp(f, p[7], fs), p[7], p[8])
+    return 20 * np.log10(np.abs(h))
 
 
 def fit(f, y, p0, fmax):

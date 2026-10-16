@@ -62,7 +62,7 @@ impl Default for SilkCal {
             blue_k: 0.8,
             blue_f: 250.0,
             a2_out: 4.0e-3,
-            core: CoreSpec { tau: 2.0e-3, hyst: 0.10, r_max: 1.5, shape: 0.0, sat: 14.0, knee: 3.0, leak_hz: 0.3, plays: 16 },
+            core: CoreSpec { tau: 2.0e-3, hyst: 0.10, r_max: 1.5, shape: 0.0, power: 0.0, sat: 14.0, knee: 3.0, leak_hz: 0.3, plays: 16 },
         }
     }
 }

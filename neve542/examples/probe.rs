@@ -58,6 +58,7 @@ fn main() {
             "head.sat" => tape.head.sat = num(),
             "head.knee" => tape.head.knee = num(),
             "head.shape" => tape.head.shape = num(),
+            "head.power" => tape.head.power = num(),
             "a2_rep" => tape.a2_rep = num(),
             "emph15" => tape.emph15 = (num(), tape.emph15.1),
             "emph15b" => tape.emph15.1 = num(),
@@ -67,10 +68,11 @@ fn main() {
                 let d: Vec<f64> = v.split(',').map(|x| x.parse().unwrap()).collect();
                 let tab = if k == "c15" { &mut tape.contour15 } else { &mut tape.contour30 };
                 for (i, row) in tab.iter_mut().enumerate() {
-                    row.copy_from_slice(&d[i * 7..i * 7 + 7]);
+                    row.copy_from_slice(&d[i * 9..i * 9 + 9]);
                 }
             }
             "clip_att" => tape.clip_att = num(),
+            "bump_pre" => tape.bump_pre = num(),
             "drive" => {
                 let d: Vec<f64> = v.split(',').map(|x| x.parse().unwrap()).collect();
                 tape.drive_db.copy_from_slice(&d);

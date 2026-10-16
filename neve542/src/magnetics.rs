@@ -42,6 +42,10 @@ pub struct CoreSpec {
     /// Shape of the coercivity distribution: density ∝ (1 − r/r_max)^shape
     /// (0 = uniform → pure Rayleigh up to r_max; > 0 = fewer hard domains).
     pub shape: f64,
+    /// Power-law tail of the coercivity density, ∝ r^(−power) (0 ≤ power < 1).
+    /// Gives THD ∝ flux^(1 − power) over a wide range instead of Rayleigh's
+    /// THD ∝ flux; soft steels show such broad coercivity distributions.
+    pub power: f64,
     /// Saturation flux of the anhysteretic curve (flux units).
     pub sat: f64,
     /// Knee sharpness of the saturation curve (2 = soft silicon steel, 4+ = hard nickel).
@@ -109,7 +113,9 @@ impl Core {
             let e1 = spec.r_max * ((k + 1) as f64 / n).powi(2);
             let rc = 0.5 * (e0 + e1);
             self.r[k] = rc;
-            self.w[k] = (e1 - e0) * (1.0 - rc / spec.r_max).max(0.0).powf(spec.shape);
+            self.w[k] = (e1 - e0)
+                * (1.0 - rc / spec.r_max).max(0.0).powf(spec.shape)
+                * (rc / spec.r_max).powf(-spec.power);
             total += self.w[k];
         }
         for w in &mut self.w {
@@ -180,7 +186,7 @@ mod tests {
 
     #[test]
     fn linear_core_is_transparent() {
-        let spec = CoreSpec { tau: 1e-3, hyst: 0.0, r_max: 1.0, shape: 0.0, sat: 1e9, knee: 2.0, leak_hz: 1.0, plays: PLAYS };
+        let spec = CoreSpec { tau: 1e-3, hyst: 0.0, r_max: 1.0, shape: 0.0, power: 0.0, sat: 1e9, knee: 2.0, leak_hz: 1.0, plays: PLAYS };
         let mut c = Core::new(spec, 96_000.0);
         let mut err = 0.0f64;
         for n in 0..50_000 {
@@ -212,7 +218,7 @@ mod tests {
     #[test]
     fn rayleigh_distortion_scales_with_flux() {
         // Halving frequency doubles flux; in the Rayleigh region H3 must ~double.
-        let spec = CoreSpec { tau: 1e-3, hyst: 0.1, r_max: 5.0, shape: 0.0, sat: 1e3, knee: 2.0, leak_hz: 0.5, plays: PLAYS };
+        let spec = CoreSpec { tau: 1e-3, hyst: 0.1, r_max: 5.0, shape: 0.0, power: 0.0, sat: 1e3, knee: 2.0, leak_hz: 0.5, plays: PLAYS };
         let fs = 96_000.0;
         let h_100 = thd(&mut Core::new(spec, fs), 100.0, 0.5, fs);
         let h_50 = thd(&mut Core::new(spec, fs), 50.0, 0.5, fs);

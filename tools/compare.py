@@ -15,9 +15,9 @@ F_RESP = [10, 16, 20, 31.5, 50, 63, 100, 160, 250, 500, 1000, 2000, 5000, 10000,
 F_THD = [20, 30, 40, 60, 100, 200, 500, 1000, 3000, 10000]
 
 
-def hw_at(curve, freqs):
+def hw_at(curve, freqs, left=None):
     a = np.array(curve)
-    return np.interp(np.log(freqs), np.log(a[:, 0]), a[:, 1])
+    return np.interp(np.log(freqs), np.log(a[:, 0]), a[:, 1], left=left)
 
 
 def main():
@@ -42,9 +42,9 @@ def main():
     print('\n=== THD @ 0 dBu, 15 ips (hardware plot vs models) ===')
     f = np.array(F_THD, float)
     for col, pot in (('red', 0.0), ('green', 0.3), ('cyan', 0.7), ('magenta', 1.0)):
-        hw = hw_at(HW['thd'][col], f)
+        hw = hw_at(HW['thd'][col], f, left=np.nan)  # MAX is off-scale (>10 %) below ~29 Hz
         print(f'sat {pot:.1f}  freq : ' + ' '.join(f'{x:7.0f}' for x in f))
-        print(f'         hw   : ' + ' '.join(f'{x:7.2f}' for x in hw))
+        print(f'         hw   : ' + ' '.join('    >10' if np.isnan(x) else f'{x:7.2f}' for x in hw))
         for name, d in duts.items():
             d.set(tape=True, ips=15, sat=pot)
             r = A.sweep(d, f)

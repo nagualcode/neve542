@@ -26,17 +26,23 @@ pub enum TapeSpeed {
 }
 
 /// Replay contour parameters at one pot position:
-/// `[fh, Qh, f_bump, G_bump(dB), Q_bump, f_lp, Q_lp]`.
-pub type Contour = [f64; 7];
+/// `[fh, Qh, f_bump, G_bump(dB), Q_bump, f_lp, Q_lp, f_shelf, G_shelf(dB)]`.
+/// The 1st-order HF shelf compensates the clip's compression of the
+/// pre-emphasised highs at the 0 dBu reference level (≈ 0 dB below MAX).
+pub type Contour = [f64; 9];
 
 /// All tunable constants of the tape path, kept together so the probe
 /// (`examples/probe.rs`) can override them during calibration.
 #[derive(Clone, Copy, Debug)]
 pub struct TapeCal {
     /// Pot positions at which contours/drive were measured.
-    /// Contours: `tools/fit/refit_contour.py` (non-linear model in the loop).
+    /// Contours: `tools/fit/refit_contour.py` (non-linear model in the loop);
+    /// everything non-linear: `tools/fit/fit_thd.py`. Run both with
+    /// `tools/fit/calibrate.sh`.
     pub knots: [f64; 4],
-    /// DRIVE gain (dB) at each knot; RECOVERY is its inverse.
+    /// DRIVE gain (dB) at each knot; RECOVERY is its inverse. The Drive meter
+    /// (3 dB LEDs) reads 2, 2, 3, 6 at the knots, so each gain is fitted
+    /// inside its LED window.
     pub drive_db: [f64; 4],
     pub contour15: [Contour; 4],
     pub contour30: [Contour; 4],
@@ -49,6 +55,9 @@ pub struct TapeCal {
     pub head: CoreSpec,
     /// Curvature of the replay amplifier (broadband H2 floor) [1/V].
     pub a2_rep: f64,
+    /// Share (in dB) of the contour's LF bump realised in the record path,
+    /// i.e. in the flux. 0 = all in replay, 1 = all before the core.
+    pub bump_pre: f64,
 }
 
 impl Default for TapeCal {
@@ -56,39 +65,41 @@ impl Default for TapeCal {
         TapeCal {
             knots: [0.0, 0.3, 0.7, 1.0],
             // Drive meter reads 2, 2, 3, 6 at these positions (RND AP plot legend).
-            drive_db: [0.0, 3.0, 5.0, 12.0],
+            drive_db: [0.0, 2.99, 5.99, 13.87],
             contour15: [
-                [6.73082, 0.522224, 68.1432, 5.46458, 0.329274, 45791.9, 0.488385],
-                [6.76443, 0.512768, 68.6072, 4.2873, 0.359091, 42791.4, 0.473889],
-                [7.42183, 0.544154, 65.9302, 3.03133, 0.394623, 41670.7, 0.425724],
-                [5.5931, 0.3, 64.1904, 1.71054, 0.530165, 39636.7, 0.446224],
+                [7.08629, 0.551993, 66.8413, 5.35447, 0.319849, 60023.5, 0.3, 6336.91, 0.172814],
+                [5.96891, 0.479335, 65.6721, 4.27497, 0.34493, 60231.8, 0.3, 31951.9, -1.0],
+                [6.61846, 0.526207, 62.9143, 3.03521, 0.388997, 55380.6, 0.3, 24347.9, -0.999878],
+                [4.5813, 0.3, 64.9256, 2.00928, 0.523055, 50995.7, 0.3, 5707.2, 2.33868],
             ],
             contour30: [
-                [5.73618, 0.3, 132.138, 3.98252, 0.287482, 400000.0, 1.25924],
-                [5.92244, 0.3, 143.357, 3.12105, 0.322554, 139225.0, 0.887691],
-                [5.55588, 0.3, 155.903, 2.12192, 0.381819, 166416.0, 0.762859],
-                [6.3256, 0.3, 180.476, 1.11653, 0.397277, 400000.0, 0.454707],
+                [5.51912, 0.300984, 130.333, 3.88642, 0.281762, 161705.0, 0.300001, 2000.0, 0.141805],
+                [5.72655, 0.3, 136.411, 3.07236, 0.311961, 66318.0, 0.665242, 3506.66, 0.542125],
+                [5.2773, 0.3, 146.714, 2.06216, 0.382446, 58309.1, 0.715021, 2000.0, 0.388053],
+                [5.31566, 0.3, 162.065, 1.28465, 0.378831, 44102.6, 0.900932, 3105.33, 0.533262],
             ],
             // NAB 15 ips (50 µs) and AES 30 ips (17.5 µs) record pre-emphasis,
-            // shelved by the drive amplifier's feedback network (+4.4 / +3.3 dB);
-            // shelf limits and clip threshold chosen by refit_contour.py sweeps
-            // (best match of the Saturation MAX AP curves).
-            emph15: (50e-6, 30e-6),
+            // shelved by the drive amplifier's feedback network; the 15 ips
+            // shelf and the clip threshold are fitted to the Saturation MAX
+            // THD rise above 1 kHz together with its frequency response.
+            emph15: (50e-6, 2.924e-05),
             emph30: (17.5e-6, 12e-6),
-            clip_att: 0.05,
-            // Fitted by tools/fit/fit_head_core.py. Flux unit: 0 dBu (1.0954 V
-            // peak) at 100 Hz, so tau = 1/(2π·100) and levels scale by 1.0954.
+            clip_att: 0.05073,
+            // Fitted by tools/fit/fit_thd.py to all four THD curves. Flux unit:
+            // 0 dBu (1.0954 V peak) at 100 Hz, so tau = 1/(2π·100).
             head: CoreSpec {
                 tau: 1.0 / (2.0 * std::f64::consts::PI * 100.0),
-                hyst: 0.2379,
-                r_max: 3.0626 * 1.095_445,
-                shape: 0.3891,
-                sat: 47.94 * 1.095_445,
-                knee: 2.4208,
+                hyst: 0.25111,
+                r_max: 14.003,
+                shape: 4.0,
+                power: 0.055807,
+                sat: 56.562,
+                knee: 1.7336,
                 leak_hz: 0.5,
                 plays: crate::magnetics::PLAYS,
             },
             a2_rep: 1.6e-3,
+            bump_pre: 0.3985,
         }
     }
 }
@@ -120,10 +131,10 @@ impl TapeCal {
         };
         let (i, t) = self.segment(p);
         let (a, b) = (&tab[i], &tab[i + 1]);
-        let mut c = [0.0; 7];
-        for k in 0..7 {
+        let mut c = [0.0; 9];
+        for k in 0..9 {
             // Frequencies interpolate geometrically, the rest linearly.
-            c[k] = if k == 0 || k == 2 || k == 5 {
+            c[k] = if k == 0 || k == 2 || k == 5 || k == 7 {
                 (a[k].ln() + (b[k].ln() - a[k].ln()) * t).exp()
             } else {
                 lerp(a[k], b[k], t)
@@ -142,7 +153,8 @@ pub struct TapeCircuit {
     pot_smooth: Smoother,
     pre: Biquad,
     de: Biquad,
-    contour: Cascade<3>,
+    bump_rec: Biquad,
+    contour: Cascade<4>,
     clip: DiodeClipper,
     pub head: Core,
     /// Peak follower of the record level (volts at the head).
@@ -164,6 +176,7 @@ impl TapeCircuit {
             pot_smooth: Smoother::new(0.03, fs, 0.0),
             pre: Biquad::default(),
             de: Biquad::default(),
+            bump_rec: Biquad::default(),
             contour: Cascade::default(),
             clip: DiodeClipper::new(cal.clip_att),
             head: Core::new(cal.head, fs),
@@ -191,6 +204,7 @@ impl TapeCircuit {
     pub fn reset(&mut self) {
         self.pre.reset();
         self.de.reset();
+        self.bump_rec.reset();
         self.contour.reset();
         self.clip.reset();
         self.head.reset();
@@ -224,11 +238,13 @@ impl TapeCircuit {
         self.contour.set(
             &[
                 (Analog::hp2(c[0], c[1]), c[0]),
-                (Analog::peak(c[2], c[3], c[4]), c[2]),
+                (Analog::peak(c[2], c[3] * (1.0 - self.cal.bump_pre), c[4]), c[2]),
                 (Analog::lp2(c[5], c[6]), c[5].min(0.4 * self.fs)),
+                (Analog::shelf1(c[7] / 10f64.powf(c[8] / 40.0), c[7] * 10f64.powf(c[8] / 40.0)), c[7].min(0.4 * self.fs)),
             ],
             self.fs,
         );
+        self.bump_rec.c = Analog::peak(c[2], c[3] * self.cal.bump_pre, c[4]).to_digital(self.fs, c[2]);
     }
 
     #[inline(always)]
@@ -250,7 +266,7 @@ impl TapeCircuit {
         let drive = self.drive;
 
         // DRIVE amplifier with IPS pre-emphasis and its diode soft clip.
-        let rec = self.clip.process(self.pre.process(x * drive));
+        let rec = self.clip.process(self.pre.process(self.bump_rec.process(x * drive)));
 
         // Drive meter taps the record level sent to the head.
         let a = rec.abs();

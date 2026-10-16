@@ -25,7 +25,7 @@ pub const DBU0_PEAK: f64 = 1.095_445;
 
 /// Mu-metal input transformer: very high permeability, tiny loop
 /// (spec: 0.07 % THD @ 20 Hz, +20 dBu, tape out).
-pub const INPUT_CORE: CoreSpec = CoreSpec { tau: 8.0e-3, hyst: 0.004, r_max: 1.0, shape: 0.0, sat: 30.0, knee: 4.0, leak_hz: 0.2, plays: 8 };
+pub const INPUT_CORE: CoreSpec = CoreSpec { tau: 8.0e-3, hyst: 0.004, r_max: 1.0, shape: 0.0, power: 0.0, sat: 30.0, knee: 4.0, leak_hz: 0.2, plays: 8 };
 
 #[derive(Clone, Copy, Debug)]
 pub struct Controls {

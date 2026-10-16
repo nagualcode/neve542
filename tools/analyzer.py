@@ -20,7 +20,7 @@ CAL_DBFS_AT_0DBU = -18.0
 SR = 96000
 RND = "/Library/Audio/Plug-Ins/VST3/RND_542_Tape.vst3"
 import os
-OURS = os.path.expanduser("~/Library/Audio/Plug-Ins/VST3/Neve542.vst3")
+OURS = os.path.expanduser("~/Library/Audio/Plug-Ins/Components/Neve542.component")
 
 
 def dbu_to_amp(dbu):
@@ -84,12 +84,8 @@ class Dut:
             "out": f"output_{c}_db",
         }
         name = names[k]
-        if not hasattr(self.p, name):
-            # older param naming fallbacks
-            alt = {"speed": "ips", "trim": "trim", "output": "output"}
-            for a, b in alt.items():
-                if name.startswith(a) and hasattr(self.p, name.replace(a, b, 1)):
-                    name = name.replace(a, b, 1)
+        if name not in self.p.parameters and name.endswith("_db"):
+            name = name[:-3]  # AU exposes trim_a / output_a without the unit suffix
         param = self.p.parameters[name]
         if k == "ips":
             v = next(s for s in param.valid_values if str(int(v)) in s)
