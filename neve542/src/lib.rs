@@ -1,21 +1,26 @@
-//! Rupert Neve 542 500 Series Tape Emulator Audio Plugin.
-//! High-precision simulation of custom transformers, Class-A discrete circuitry,
-//! magnetic saturation, and patent US 7,454,025 SILK texture.
+//! Jardim Sonoro 542 — component-level model of the Rupert Neve Designs 542
+//! Tape Emulator (500 series), dual channel.
 //!
-//! Supports Dual Mono, Stereo, and Mid/Side (M/S) processing modes with Channel Linking.
+//! Signal chain per channel (see `channel.rs`): mu-metal input transformer →
+//! Class-A TRIM stage → tape circuit (DRIVE amp with IPS pre-emphasis and
+//! diode soft clip → hysteretic "record head" transformer → counter-ganged
+//! RECOVERY amp with de-emphasis and replay contour) → BLEND amp → output
+//! stage + output transformer with SILK (frequency-shaped negative-feedback
+//! reduction). Dual Mono, Stereo and Mid/Side operation.
 
-mod biquad;
-mod neve542_channel;
-mod oversampler;
-mod silk;
-mod tape;
+pub mod amp;
+pub mod channel;
+pub mod filters;
+pub mod magnetics;
+pub mod oversampler;
+pub mod silk;
+pub mod tape;
+mod ui;
 
 use std::sync::Arc;
 use truce::prelude::*;
-use truce_gui::IntoLayoutEditor;
-use truce_gui_types::layout::{dropdown, knob, meter, toggle, widgets, GridLayout};
 
-use neve542_channel::Neve542Channel;
+use channel::{Channel, Controls};
 pub use silk::SilkMode;
 pub use tape::TapeSpeed;
 
@@ -198,16 +203,54 @@ use Neve542ParamsParamId as P;
 pub struct Neve542;
 
 pub struct Neve542Dsp {
-    pub channels: [Neve542Channel; 2],
-    pub sample_rate: f32,
+    pub channels: [Channel; 2],
+    pub sample_rate: f64,
 }
 
 impl Default for Neve542Dsp {
     fn default() -> Self {
-        Self {
-            channels: [Neve542Channel::new(48000.0), Neve542Channel::new(48000.0)],
-            sample_rate: 48000.0,
-        }
+        Self { channels: [Channel::new(48_000.0), Channel::new(48_000.0)], sample_rate: 48_000.0 }
+    }
+}
+
+fn speed(v: IpsSpeed) -> TapeSpeed {
+    match v {
+        IpsSpeed::Ips15 => TapeSpeed::Ips15,
+        IpsSpeed::Ips30 => TapeSpeed::Ips30,
+    }
+}
+
+fn silk(v: SilkModeEnum) -> SilkMode {
+    match v {
+        SilkModeEnum::Off => SilkMode::Off,
+        SilkModeEnum::Red => SilkMode::Red,
+        SilkModeEnum::Blue => SilkMode::Blue,
+    }
+}
+
+fn controls_a(p: &Neve542Params) -> Controls {
+    Controls {
+        trim_db: p.trim_a.value() as f64,
+        tape_in: p.tape_in_a.value(),
+        speed: speed(p.ips_a.value()),
+        saturation: p.saturation_a.value() as f64,
+        blend: p.blend_a.value() as f64,
+        silk: silk(p.silk_a.value()),
+        texture: p.texture_a.value() as f64,
+        output_db: p.output_a.value() as f64,
+    }
+}
+
+fn controls_b(p: &Neve542Params) -> Controls {
+    Controls {
+        trim_db: p.trim_b.value() as f64,
+        tape_in: p.tape_in_b.value(),
+        speed: speed(p.ips_b.value()),
+        saturation: p.saturation_b.value() as f64,
+        blend: p.blend_b.value() as f64,
+        silk: silk(p.silk_b.value()),
+        texture: p.texture_b.value() as f64,
+        output_db: p.output_b.value() as f64,
     }
 }
 
@@ -215,10 +258,13 @@ impl PluginLogic for Neve542 {
     type Params = Neve542Params;
     type DspState = Neve542Dsp;
 
-    fn reset(state: &mut Self::DspState, _params: &Self::Params, config: &AudioConfig) {
-        state.sample_rate = config.sample_rate as f32;
-        for ch in &mut state.channels {
-            ch.set_sample_rate(config.sample_rate as f32);
+    fn reset(state: &mut Self::DspState, params: &Self::Params, config: &AudioConfig) {
+        state.sample_rate = config.sample_rate;
+        let (a, b) = (controls_a(params), controls_b(params));
+        let stereo = params.mode.value() == ProcessingMode::Stereo;
+        for (i, ch) in state.channels.iter_mut().enumerate() {
+            *ch = Channel::new(config.sample_rate);
+            ch.set_controls(if i == 0 || stereo { a } else { b });
             ch.reset();
         }
     }
@@ -230,12 +276,9 @@ impl PluginLogic for Neve542 {
         _events: &EventList,
         context: &mut ProcessContext,
     ) -> ProcessStatus {
-        let num_channels = buffer.channels();
-
-        // Host bypass path
         if params.bypass.value() {
             let n_in = buffer.num_input_channels();
-            for ch in 0..num_channels {
+            for ch in 0..buffer.channels() {
                 let (inp, out) = buffer.io(ch);
                 if ch < n_in {
                     out.copy_from_slice(inp);
@@ -247,158 +290,41 @@ impl PluginLogic for Neve542 {
         }
 
         let mode = params.mode.value();
-        let link = params.link.value();
+        let a = controls_a(params);
+        // STEREO assigns CH A controls to both channels (RND manual).
+        let b = if mode == ProcessingMode::Stereo { a } else { controls_b(params) };
+        state.channels[0].set_controls(a);
+        state.channels[1].set_controls(b);
 
-        // Channel A settings
-        let trim_a = params.trim_a.value();
-        let tape_in_a = params.tape_in_a.value();
-        let tape_speed_a = match params.ips_a.value() {
-            IpsSpeed::Ips15 => TapeSpeed::Ips15,
-            IpsSpeed::Ips30 => TapeSpeed::Ips30,
-        };
-        let sat_a = params.saturation_a.value();
-        let blend_a = params.blend_a.value();
-        let silk_a = match params.silk_a.value() {
-            SilkModeEnum::Off => SilkMode::Off,
-            SilkModeEnum::Red => SilkMode::Red,
-            SilkModeEnum::Blue => SilkMode::Blue,
-        };
-        let tex_a = params.texture_a.value();
-        let out_a = params.output_a.value();
-
-        // Channel B settings: in Stereo mode or with Link active, Channel A commands both
-        let (trim_b, tape_in_b, tape_speed_b, sat_b, blend_b, silk_b, tex_b, out_b) =
-            if mode == ProcessingMode::Stereo || link {
-                (trim_a, tape_in_a, tape_speed_a, sat_a, blend_a, silk_a, tex_a, out_a)
-            } else {
-                let s_b = match params.ips_b.value() {
-                    IpsSpeed::Ips15 => TapeSpeed::Ips15,
-                    IpsSpeed::Ips30 => TapeSpeed::Ips30,
-                };
-                let sk_b = match params.silk_b.value() {
-                    SilkModeEnum::Off => SilkMode::Off,
-                    SilkModeEnum::Red => SilkMode::Red,
-                    SilkModeEnum::Blue => SilkMode::Blue,
-                };
-                (
-                    params.trim_b.value(),
-                    params.tape_in_b.value(),
-                    s_b,
-                    params.saturation_b.value(),
-                    params.blend_b.value(),
-                    sk_b,
-                    params.texture_b.value(),
-                    params.output_b.value(),
-                )
-            };
-
-        // Frame-level processing with stack-allocated frames (no audio-thread allocation)
-        buffer.for_each_frame_io::<2, 2, _>(|frame_in, frame_out| {
-            let mut in_0 = frame_in[0];
-            let mut in_1 = frame_in[1];
-
-            if mode == ProcessingMode::MidSide {
-                // Mid/Side matrix encode (power-preserving 1/sqrt(2) ~ 0.70710678)
-                let m = (in_0 + in_1) * 0.70710678;
-                let s = (in_0 - in_1) * 0.70710678;
-                in_0 = m;
-                in_1 = s;
+        let ms = mode == ProcessingMode::MidSide;
+        let [c0, c1] = &mut state.channels;
+        buffer.for_each_frame_io::<2, 2, _>(|inp, out| {
+            let (mut l, mut r) = (inp[0], inp[1]);
+            if ms {
+                let m = (l + r) * std::f32::consts::FRAC_1_SQRT_2;
+                let s = (l - r) * std::f32::consts::FRAC_1_SQRT_2;
+                l = m;
+                r = s;
             }
-
-            let proc_0 = state.channels[0].process_sample(
-                in_0,
-                trim_a,
-                tape_in_a,
-                tape_speed_a,
-                sat_a,
-                blend_a,
-                silk_a,
-                tex_a,
-                out_a,
-            );
-
-            let proc_1 = state.channels[1].process_sample(
-                in_1,
-                trim_b,
-                tape_in_b,
-                tape_speed_b,
-                sat_b,
-                blend_b,
-                silk_b,
-                tex_b,
-                out_b,
-            );
-
-            if mode == ProcessingMode::MidSide {
-                // Mid/Side matrix decode back to Left / Right
-                frame_out[0] = (proc_0 + proc_1) * 0.70710678;
-                frame_out[1] = (proc_0 - proc_1) * 0.70710678;
+            let (y0, y1) = (c0.process(l), c1.process(r));
+            if ms {
+                out[0] = (y0 + y1) * std::f32::consts::FRAC_1_SQRT_2;
+                out[1] = (y0 - y1) * std::f32::consts::FRAC_1_SQRT_2;
             } else {
-                frame_out[0] = proc_0;
-                frame_out[1] = proc_1;
+                out[0] = y0;
+                out[1] = y1;
             }
         });
 
-        // Update hardware drive & level meters for both channels
-        let drive_val_a = state.channels[0].tape.drive_meter_value();
-        let drive_val_b = state.channels[1].tape.drive_meter_value();
-        let level_val_a = state.channels[0].level_meter_value();
-        let level_val_b = state.channels[1].level_meter_value();
-
-        context.set_meter(P::DriveMeterA, drive_val_a);
-        context.set_meter(P::DriveMeterB, drive_val_b);
-        context.set_meter(P::LevelMeterA, level_val_a);
-        context.set_meter(P::LevelMeterB, level_val_b);
-
+        context.set_meter(P::DriveMeterA, state.channels[0].drive_meter());
+        context.set_meter(P::DriveMeterB, state.channels[1].drive_meter());
+        context.set_meter(P::LevelMeterA, state.channels[0].level_meter());
+        context.set_meter(P::LevelMeterB, state.channels[1].level_meter());
         ProcessStatus::Normal
     }
 
     fn editor(params: Arc<Neve542Params>) -> Box<dyn Editor> {
-        // Sleek 19" rack-style side-by-side layout:
-        // Left: Channel A (cols 0..4)
-        // Center: Master & Routing (cols 5..6)
-        // Right: Channel B (cols 7..11)
-        // Exactly 2 rows high, with resizable(false) so the window height is strictly clamped.
-        GridLayout::build(vec![widgets(vec![
-            // --- Row 0: Channel A (Gain & Tape) ---
-            knob(P::TrimA, "Trim A").at(0, 0),
-            toggle(P::TapeInA, "Tape A").at(1, 0),
-            knob(P::SaturationA, "Sat A").at(2, 0),
-            dropdown(P::IpsA, "Speed A").at(3, 0),
-            meter(&[P::DriveMeterA], "Drive A").at(4, 0),
-
-            // --- Row 0: Master Section ---
-            dropdown(P::Mode, "Mode").at(5, 0),
-            toggle(P::Bypass, "Bypass").at(6, 0),
-
-            // --- Row 0: Channel B (Gain & Tape) ---
-            knob(P::TrimB, "Trim B").at(7, 0),
-            toggle(P::TapeInB, "Tape B").at(8, 0),
-            knob(P::SaturationB, "Sat B").at(9, 0),
-            dropdown(P::IpsB, "Speed B").at(10, 0),
-            meter(&[P::DriveMeterB], "Drive B").at(11, 0),
-
-            // --- Row 1: Channel A (Output & Silk) ---
-            knob(P::OutputA, "Out A").at(0, 1),
-            knob(P::BlendA, "Blend A").at(1, 1),
-            dropdown(P::SilkA, "Silk A").at(2, 1),
-            knob(P::TextureA, "Texture A").at(3, 1),
-            meter(&[P::LevelMeterA], "Level A").at(4, 1),
-
-            // --- Row 1: Master Section ---
-            toggle(P::Link, "Link A-B").at(5, 1),
-
-            // --- Row 1: Channel B (Output & Silk) ---
-            knob(P::OutputB, "Out B").at(7, 1),
-            knob(P::BlendB, "Blend B").at(8, 1),
-            dropdown(P::SilkB, "Silk B").at(9, 1),
-            knob(P::TextureB, "Texture B").at(10, 1),
-            meter(&[P::LevelMeterB], "Level B").at(11, 1),
-        ])])
-        .with_title("RUPERT NEVE 542")
-        .with_subtitle("DUAL TAPE EMULATOR - STEREO / DUAL MONO / M-S")
-        .resizable(false)
-        .into_editor(&params)
+        ui::editor(params)
     }
 }
 

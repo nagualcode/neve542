@@ -35,6 +35,10 @@ truce-gui-types = { version = "6.3" }
 # Built-in renderer. Plugins that supply their own editor (egui /
 # iced / slint) can drop this dep.
 truce-gui = { version = "6.3" }
+# Custom-painted editor (egui).
+truce-egui = { version = "6.3" }
+egui = "0.34"
+truce-core = "6.3"
 truce-clap = { version = "6.3", optional = true }
 truce-vst3 = { version = "6.3", optional = true }
 truce-standalone = { version = "6.3", features = ["gui"], optional = true }

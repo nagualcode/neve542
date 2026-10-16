@@ -48,7 +48,7 @@ When modeling any piece of hardware or vintage plugin:
 Manufacturers often keep their core innovation proprietary in marketing brochures, but **must fully disclose the circuit mechanisms in their patents**:
 * **How to search:** Search USPTO, Google Patents, or Espacenet by designer name (e.g. *Rupert Neve*, *David Blackmer*, *George Massenburg*, *Ray Dolby*) or assignee.
 * **What to extract:**
-  * Exact feedback loop topologies (e.g. US Patent 7,454,025 for Neve SILK texture).
+  * Exact feedback loop topologies. **Verify every patent number you cite** by opening it (Google Patents / USPTO): an earlier version of this project attributed SILK to "US 7,454,025", which is actually a Panasonic loudspeaker patent.
   * Diode/transistor limiter arrangements and thresholds.
   * State equations and circuit component values.
 
