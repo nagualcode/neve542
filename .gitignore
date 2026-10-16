@@ -11,7 +11,7 @@ __pycache__/
 **/__pycache__/
 *.pyc
 
-# Archives
+# Archives / installers
 *.zip
 
 
@@ -23,3 +23,4 @@ __pycache__/
 .agents/*
 !.agents/skills/
 
+*.pkg
