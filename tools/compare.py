@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare Neve542 (ours) and the RND 542 plug-in against the 542 hardware
+"""Compare Snow 653 (ours) and the RND 542 plug-in against the 542 hardware
 Audio Precision plots (digitized in tools/hw/rnd542_ap_curves.json).
 
 Usage: python3 tools/compare.py [--json out.json]

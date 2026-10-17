@@ -1,13 +1,13 @@
 [package]
-name = "neve542"
-version = "0.2.0"
+name = "snow653"
+version = "0.3.0"
 edition = "2024"
 
 [lib]
 crate-type = ["cdylib", "staticlib", "rlib"]
 
 [[bin]]
-name = "neve542-standalone"
+name = "snow653-standalone"
 path = "src/main.rs"
 required-features = ["standalone"]
 

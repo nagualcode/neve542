@@ -4,9 +4,9 @@
 //! cargo run --release --example probe -- [sr=96000] [ips=15] [sat=0] [level=0]
 //!     [tape=1] [silk=off|red|blue] [tex=0] [blend=1] [trim=0] [freqs=20,50,...]
 //!     [cal.<field>=v ...]
-use neve542::channel::{Channel, Controls};
-use neve542::silk::{SilkCal, SilkMode};
-use neve542::tape::{TapeCal, TapeSpeed};
+use snow653::channel::{Channel, Controls};
+use snow653::silk::{SilkCal, SilkMode};
+use snow653::tape::{TapeCal, TapeSpeed};
 use std::f64::consts::PI;
 
 fn fit(y: &[f64], f: f64, sr: f64) -> [f64; 6] {
@@ -73,11 +73,19 @@ fn main() {
             }
             "clip_att" => tape.clip_att = num(),
             "bump_pre" => tape.bump_pre = num(),
+            "couple_hz" => tape.couple_hz = num(),
+            "clip_asym" => tape.clip_asym = num(),
+            "remanence" => tape.remanence = num(),
+            "silk.knee" => silk.core.knee = num(),
             "drive" => {
                 let d: Vec<f64> = v.split(',').map(|x| x.parse().unwrap()).collect();
                 tape.drive_db.copy_from_slice(&d);
             }
             "silk.a2" => silk.a2_out = num(),
+            "silk.blue" => {
+                let d: Vec<f64> = v.split(',').map(|x| x.parse().unwrap()).collect();
+                silk.blue.copy_from_slice(&d);
+            }
             "silk.s0" => silk.s0 = num(),
             "silk.red_k" => silk.red_k = num(),
             "silk.red_f" => silk.red_f = num(),
@@ -94,6 +102,7 @@ fn main() {
     println!("{:>8} {:>8} {:>7} {:>7} {:>7}", "Hz", "gain dB", "THD %", "H2 %", "H3 %");
     for &f in &freqs {
         let mut ch = Channel::with_cal(sr, tape, silk);
+        ch.noise = 0.0;
         ch.set_controls(ctl);
         ch.reset();
         ch.snap();

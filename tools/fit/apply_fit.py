@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Write tools/fit/thd_fit.json + contour_refit.json into neve542/src/tape.rs."""
+"""Write tools/fit/thd_fit.json + contour_refit.json into snow653/src/tape.rs."""
 import json, re
 
-P = 'neve542/src/tape.rs'
+P = 'snow653/src/tape.rs'
 s = open(P).read()
 thd = json.load(open('tools/fit/thd_fit.json'))
 con = json.load(open('tools/fit/contour_refit.json'))

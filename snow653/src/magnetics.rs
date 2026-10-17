@@ -74,6 +74,10 @@ pub struct Core {
     /// Drive scaling applied to the flux before the core law (used by the
     /// record head: more DRIVE = more flux for the same replay level).
     pub flux_gain: f64,
+    /// Remanent magnetisation (flux units): a core that has been hit with
+    /// DC or a big transient keeps a small offset, which tilts the
+    /// saturation curve and adds even harmonics (an un-demagnetised head).
+    pub bias: f64,
 }
 
 impl Core {
@@ -91,6 +95,7 @@ impl Core {
             phi: 0.0,
             b_prev: 0.0,
             flux_gain: 1.0,
+            bias: 0.0,
         };
         c.configure(spec, fs);
         c
@@ -156,7 +161,10 @@ impl Core {
             self.play[k] = p;
             m += self.w[k] * p;
         }
-        self.saturate(m)
+        if self.bias == 0.0 {
+            return self.saturate(m);
+        }
+        self.saturate(m + self.bias) - self.saturate(self.bias)
     }
 
     /// One sample: winding voltage in, induced secondary voltage out.

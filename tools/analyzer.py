@@ -20,7 +20,7 @@ CAL_DBFS_AT_0DBU = -18.0
 SR = 96000
 RND = "/Library/Audio/Plug-Ins/VST3/RND_542_Tape.vst3"
 import os
-OURS = os.path.expanduser("~/Library/Audio/Plug-Ins/Components/Neve542.component")
+OURS = os.path.expanduser("~/Library/Audio/Plug-Ins/Components/Snow 653.component")
 
 
 def dbu_to_amp(dbu):

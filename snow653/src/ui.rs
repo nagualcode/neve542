@@ -1,4 +1,4 @@
-//! Editor: the 542 front panel, re-drawn as a modern device.
+//! Editor: the Snow 653 front panel (laid out after the 542), re-drawn as a modern device.
 //!
 //! Each channel is one row that reads left to right in signal-flow order,
 //! like the hardware module reads top to bottom: INPUT (Trim)  ›  TAPE
@@ -20,7 +20,7 @@ use truce_core::editor::{PluginContext, PluginContextReadF64};
 use truce_egui::{EditorUi, EguiEditor};
 
 use crate::channel::LEVEL_LEDS_DBU;
-use crate::{Neve542Params, Neve542ParamsParamId as P};
+use crate::{Snow653Params, Snow653ParamsParamId as P};
 
 pub const W: f32 = 1060.0;
 pub const H: f32 = 500.0;
@@ -105,7 +105,7 @@ fn twin(id: P) -> P {
     id
 }
 
-type Ctx = PluginContext<Neve542Params>;
+type Ctx = PluginContext<Snow653Params>;
 
 fn sk(w: f32, c: Color32) -> Stroke {
     Stroke::new(w, c)
@@ -344,17 +344,17 @@ fn section(p: &egui::Painter, rect: Rect, title: &str, accent: Color32) {
 }
 
 #[derive(Default)]
-pub struct Ui542;
+pub struct Ui653;
 
-impl Ui542 {
+impl Ui653 {
     fn header(&self, ui: &mut egui::Ui, st: &Ctx) {
         let p = ui.painter().clone();
         let hr = Rect::from_min_size(Pos2::ZERO, vec2(W, 46.0));
         p.rect_filled(hr, CornerRadius::ZERO, HEADER);
         p.line_segment([pos2(0.0, 46.0), pos2(W, 46.0)], sk(1.0, LINE));
-        label(&p, pos2(18.0, 23.0), Align2::LEFT_CENTER, "542", 24.0, TEXT);
+        label(&p, pos2(18.0, 23.0), Align2::LEFT_CENTER, "653", 24.0, TEXT);
         label(&p, pos2(70.0, 17.0), Align2::LEFT_CENTER, "TAPE EMULATOR", 11.0, TEXT);
-        label(&p, pos2(70.0, 31.0), Align2::LEFT_CENTER, "component-level model · Jardim Sonoro", 9.5, DIM);
+        label(&p, pos2(70.0, 31.0), Align2::LEFT_CENTER, "SNOW · vintage transformer & tape circuit · Jardim Sonoro", 9.5, DIM);
 
         let pn = Panel { st, link: false, enabled: true };
         label(&p, pos2(W * 0.5 - 132.0, 23.0), Align2::RIGHT_CENTER, "MODE", 10.0, DIM);
@@ -472,7 +472,7 @@ impl Ui542 {
     }
 }
 
-impl EditorUi<Neve542Params> for Ui542 {
+impl EditorUi<Snow653Params> for Ui653 {
     fn ui(&mut self, ui: &mut egui::Ui, st: &Ctx) {
         ui.painter().rect_filled(Rect::from_min_size(Pos2::ZERO, vec2(W, H)), CornerRadius::ZERO, BG);
         self.header(ui, st);
@@ -492,8 +492,8 @@ impl EditorUi<Neve542Params> for Ui542 {
     }
 }
 
-pub fn editor(params: Arc<Neve542Params>) -> Box<dyn Editor> {
+pub fn editor(params: Arc<Snow653Params>) -> Box<dyn Editor> {
     let mut visuals = truce_egui::theme::dark();
     visuals.panel_fill = BG;
-    Box::new(EguiEditor::with_ui(params, (W as u32, H as u32), Ui542).with_visuals(visuals).resizable(false))
+    Box::new(EguiEditor::with_ui(params, (W as u32, H as u32), Ui653).with_visuals(visuals).resizable(false))
 }

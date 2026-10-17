@@ -70,8 +70,9 @@ pub struct DiodeClipper {
 }
 
 impl DiodeClipper {
-    pub fn new(att: f64) -> Self {
-        DiodeClipper { r: 10_000.0, is1: 2.52e-9, is2: 1.1e-9, nvt: 1.752 * 0.025_85, att, v: 0.0 }
+    /// `asym` = Is₂/Is₁ (1 = matched pair, symmetric clip).
+    pub fn new(att: f64, asym: f64) -> Self {
+        DiodeClipper { r: 10_000.0, is1: 2.52e-9, is2: 2.52e-9 * asym, nvt: 1.752 * 0.025_85, att, v: 0.0 }
     }
 
     pub fn reset(&mut self) {
@@ -122,10 +123,10 @@ mod tests {
 
     #[test]
     fn diode_clip_is_transparent_at_low_level_and_limits_high() {
-        let mut d = DiodeClipper::new(0.13);
+        let mut d = DiodeClipper::new(0.13, 0.4365);
         let y = d.process(0.5);
         assert!((y - 0.5).abs() < 0.01, "y={y}");
-        let mut d = DiodeClipper::new(0.13);
+        let mut d = DiodeClipper::new(0.13, 0.4365);
         let y = d.process(20.0);
         assert!(y < 8.0, "y={y}");
     }

@@ -17,12 +17,12 @@ FS_INT = 192000.0  # probe runs at sr=96k -> 2x oversampled tape path
 def contour_db(p, f):
     return model(p, f, FS_INT)
 
-PROBE = 'neve542/target/release/examples/probe'
+PROBE = 'snow653/target/release/examples/probe'
 EXTRA = [a for a in sys.argv[1:] if '=' in a]
 QUIET = '--quiet' in sys.argv
 HW = json.load(open('tools/hw/rnd542_ap_curves.json'))
 cur = {}
-src = open('neve542/src/tape.rs').read()
+src = open('snow653/src/tape.rs').read()
 
 
 def run(ips, pot, freqs, tabs):

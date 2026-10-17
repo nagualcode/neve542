@@ -27,6 +27,36 @@ pub const DBU0_PEAK: f64 = 1.095_445;
 /// (spec: 0.07 % THD @ 20 Hz, +20 dBu, tape out).
 pub const INPUT_CORE: CoreSpec = CoreSpec { tau: 8.0e-3, hyst: 0.004, r_max: 1.0, shape: 0.0, power: 0.0, sat: 30.0, knee: 4.0, leak_hz: 0.2, plays: 8 };
 
+/// Background noise of the unit, rms in a 22 kHz band [V]. The 542 spec
+/// is "better than −100 dBV" at unity; an aged unit with tired transistors
+/// and carbon resistors sits a few dB above that. Half is generated ahead
+/// of TRIM (so it rises with input gain), half at the output stage.
+pub const NOISE_IN_V: f64 = 0.774_6 * 7.08e-6; // −103 dBu
+pub const NOISE_OUT_V: f64 = 0.774_6 * 1.0e-5; // −100 dBu  (sum ≈ −98.2 dBu)
+
+/// Component tolerances of one channel of a hand-matched vintage pair.
+/// Channel A is the calibrated reference; channel B carries the deviations a
+/// tech would accept when matching two 40-year-old cards (≤ 0.15 dB, ≤ 2 %).
+pub fn unit_cal(unit: usize) -> (TapeCal, SilkCal) {
+    let mut tape = TapeCal::default();
+    let mut silk = SilkCal::default();
+    if unit % 2 == 1 {
+        for row in tape.contour15.iter_mut().chain(tape.contour30.iter_mut()) {
+            row[2] *= 1.018; // head-bump frequency (gap / pole-piece wear)
+            row[3] += 0.12; // head-bump height
+        }
+        for d in tape.drive_db.iter_mut().skip(1) {
+            *d += 0.15; // DRIVE half of the dual pot tracks a little high
+        }
+        tape.head.sat *= 0.97;
+        tape.remanence *= 1.4;
+        tape.clip_asym *= 0.8;
+        silk.core.hyst *= 1.15;
+        silk.a2_out *= 1.08;
+    }
+    (tape, silk)
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct Controls {
     pub trim_db: f64,
@@ -74,11 +104,23 @@ pub struct Channel {
     /// Peak follower at the blend-amp output (pre-SILK LEVEL meter), volts.
     pub level_peak: f64,
     level_release: f64,
+    /// Noise scale (1 = the unit's own hiss, 0 = noiseless, for calibration).
+    pub noise: f64,
+    noise_k: f64,
+    rng: u64,
 }
 
 impl Channel {
     pub fn new(fs: f64) -> Self {
-        Self::with_cal(fs, TapeCal::default(), SilkCal::default())
+        Self::for_unit(fs, 0)
+    }
+
+    /// Channel `unit` of the vintage pair (0 = A, 1 = B).
+    pub fn for_unit(fs: f64, unit: usize) -> Self {
+        let (tape, silk) = unit_cal(unit);
+        let mut c = Self::with_cal(fs, tape, silk);
+        c.rng = 0x9E37_79B9_7F4A_7C15 ^ (unit as u64 + 1).wrapping_mul(0xD1B5_4A32_D192_ED03);
+        c
     }
 
     pub fn with_cal(fs: f64, tape: TapeCal, silk: SilkCal) -> Self {
@@ -102,6 +144,11 @@ impl Channel {
             out_hp: Biquad::default(),
             level_peak: 0.0,
             level_release: 0.0,
+            noise: 1.0,
+            // White noise over 0..fs/2 with the specified rms in 22 kHz;
+            // a sum of two uniforms (triangular pdf) has variance 1/6.
+            noise_k: (fs / 2.0 / 22_000.0).sqrt() * 6f64.sqrt(),
+            rng: 0x9E37_79B9_7F4A_7C15,
         };
         c.configure();
         c
@@ -189,7 +236,23 @@ impl Channel {
         for i in 0..self.os.factor() {
             buf[i] = self.tick(buf[i]);
         }
-        (self.os.down(&buf) / VOLTS_PER_FS) as f32
+        let mut y = self.os.down(&buf);
+        if self.noise > 0.0 {
+            let n = self.uniform() + self.uniform() - 1.0;
+            let m = self.uniform() + self.uniform() - 1.0;
+            let hiss = NOISE_IN_V * n * self.trim.value + NOISE_OUT_V * m;
+            y += self.noise * self.noise_k * hiss * self.out_gain.value;
+        }
+        (y / VOLTS_PER_FS) as f32
+    }
+
+    #[inline(always)]
+    fn uniform(&mut self) -> f64 {
+        // xorshift64*: cheap, and each channel has its own uncorrelated stream.
+        self.rng ^= self.rng >> 12;
+        self.rng ^= self.rng << 25;
+        self.rng ^= self.rng >> 27;
+        (self.rng.wrapping_mul(0x2545_F491_4F6C_DD1D) >> 11) as f64 / (1u64 << 53) as f64
     }
 
     /// Drive meter (record level re. nominal 0 dBu @ Saturation MIN):

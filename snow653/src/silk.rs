@@ -35,8 +35,8 @@ pub struct SilkCal {
     /// Red @ Texture MAX: [gain dB, HP fc, HP Q, high-shelf fc, gain dB, Q].
     pub red: [f64; 6],
     /// Blue @ Texture MAX: [gain dB, HP fc, HP Q, low-shelf fc, gain dB, Q, LP fc].
-    /// (Shelf gain trimmed from the 1.95 dB linear fit: the output-core
-    /// residual adds ~0.5 dB of in-phase LF bloom when Blue opens the loop.)
+    /// (Shelf retrimmed against the AP plot with the output core's in-phase
+    /// LF bloom in the loop.)
     pub blue: [f64; 7],
     /// Residual sensitivity with full feedback (SILK OFF).
     pub s0: f64,
@@ -46,7 +46,10 @@ pub struct SilkCal {
     /// Sensitivity opened by Blue (low-pass shaped) at Texture MAX.
     pub blue_k: f64,
     pub blue_f: f64,
-    /// Open-loop curvature of the single-ended output stage [1/V].
+    /// Open-loop curvature of the single-ended output stage [1/V]. Set so
+    /// SILK colour is mostly 2nd order and reaches ~4–5 % THD when driven
+    /// hard (RND's description); the output core is kept light so its 3rd
+    /// harmonic never dominates.
     pub a2_out: f64,
     pub core: CoreSpec,
 }
@@ -55,14 +58,14 @@ impl Default for SilkCal {
     fn default() -> Self {
         SilkCal {
             red: [1.4716, 3.0152, 0.3, 3943.85, 1.7835, 0.5197],
-            blue: [-0.1069, 2.7198, 0.3, 90.528, 1.45, 0.5101, 178_062.0],
+            blue: [-0.1069, 2.65, 0.3, 82.0, 1.82, 0.5101, 178_062.0],
             s0: 0.0015,
             red_k: 0.9,
             red_f: 1500.0,
             blue_k: 0.8,
             blue_f: 250.0,
-            a2_out: 4.0e-3,
-            core: CoreSpec { tau: 2.0e-3, hyst: 0.10, r_max: 1.5, shape: 0.0, power: 0.0, sat: 14.0, knee: 3.0, leak_hz: 0.3, plays: 16 },
+            a2_out: 8.0e-3,
+            core: CoreSpec { tau: 2.0e-3, hyst: 0.04, r_max: 1.5, shape: 0.0, power: 0.0, sat: 14.0, knee: 3.0, leak_hz: 0.3, plays: 16 },
         }
     }
 }

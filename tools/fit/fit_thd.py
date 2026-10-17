@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from scipy.optimize import least_squares
 
-PROBE = 'neve542/target/release/examples/probe'
+PROBE = 'snow653/target/release/examples/probe'
 EXTRA = [a for a in sys.argv[1:] if '=' in a]
 HW = json.load(open('tools/hw/rnd542_ap_curves.json'))['thd']
 POTS = (('red', 0.0), ('green', 0.3), ('cyan', 0.7), ('magenta', 1.0))

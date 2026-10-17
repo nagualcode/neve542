@@ -58,6 +58,15 @@ pub struct TapeCal {
     /// Share (in dB) of the contour's LF bump realised in the record path,
     /// i.e. in the flux. 0 = all in replay, 1 = all before the core.
     pub bump_pre: f64,
+    /// Coupling capacitor between the DRIVE amp and the head winding [Hz].
+    /// Blocks the clip's rectified DC, which would otherwise magnetise the
+    /// head; the resulting bias shift makes the clip breathe with the
+    /// programme instead of sticking to one side.
+    pub couple_hz: f64,
+    /// Diode-pair mismatch Is₂/Is₁ (sets the clip's 2nd harmonic).
+    pub clip_asym: f64,
+    /// Remanent flux of the record head (flux units, 0 dBu @ 100 Hz = 1).
+    pub remanence: f64,
 }
 
 impl Default for TapeCal {
@@ -65,41 +74,44 @@ impl Default for TapeCal {
         TapeCal {
             knots: [0.0, 0.3, 0.7, 1.0],
             // Drive meter reads 2, 2, 3, 6 at these positions (RND AP plot legend).
-            drive_db: [0.0, 2.99, 5.99, 13.87],
+            drive_db: [0.0, 2.99, 5.99, 13.95],
             contour15: [
-                [7.08629, 0.551993, 66.8413, 5.35447, 0.319849, 60023.5, 0.3, 6336.91, 0.172814],
-                [5.96891, 0.479335, 65.6721, 4.27497, 0.34493, 60231.8, 0.3, 31951.9, -1.0],
-                [6.61846, 0.526207, 62.9143, 3.03521, 0.388997, 55380.6, 0.3, 24347.9, -0.999878],
-                [4.5813, 0.3, 64.9256, 2.00928, 0.523055, 50995.7, 0.3, 5707.2, 2.33868],
+                [5.89196, 0.5407, 66.972, 5.4204, 0.310729, 59810.6, 0.3, 4816.73, 0.295496],
+                [2.73857, 0.30001, 65.8491, 4.34262, 0.332088, 52944.0, 0.369333, 36896.4, -1.0],
+                [5.42268, 0.502448, 62.7591, 3.1073, 0.367952, 55377.2, 0.3, 29255.4, -1.0],
+                [4.51656, 0.3, 64.8071, 1.92733, 0.51632, 50997.4, 0.3, 2977.72, 0.470166],
             ],
             contour30: [
-                [5.51912, 0.300984, 130.333, 3.88642, 0.281762, 161705.0, 0.300001, 2000.0, 0.141805],
-                [5.72655, 0.3, 136.411, 3.07236, 0.311961, 66318.0, 0.665242, 3506.66, 0.542125],
-                [5.2773, 0.3, 146.714, 2.06216, 0.382446, 58309.1, 0.715021, 2000.0, 0.388053],
-                [5.31566, 0.3, 162.065, 1.28465, 0.378831, 44102.6, 0.900932, 3105.33, 0.533262],
+                [5.00351, 0.3, 131.794, 3.97849, 0.278733, 155281.0, 0.3, 2000.0, 0.252059],
+                [5.22954, 0.3, 139.016, 3.15867, 0.310084, 62687.5, 0.691403, 2782.8, 0.609144],
+                [4.83268, 0.3, 149.25, 2.14634, 0.370563, 63431.8, 0.683733, 2000.0, 0.50498],
+                [5.2401, 0.3, 162.122, 1.23775, 0.380191, 52626.2, 0.769972, 2027.23, 0.395573],
             ],
             // NAB 15 ips (50 µs) and AES 30 ips (17.5 µs) record pre-emphasis,
             // shelved by the drive amplifier's feedback network; the 15 ips
             // shelf and the clip threshold are fitted to the Saturation MAX
             // THD rise above 1 kHz together with its frequency response.
-            emph15: (50e-6, 2.924e-05),
+            emph15: (50e-6, 2.998e-05),
             emph30: (17.5e-6, 12e-6),
-            clip_att: 0.05073,
+            clip_att: 0.05135,
             // Fitted by tools/fit/fit_thd.py to all four THD curves. Flux unit:
             // 0 dBu (1.0954 V peak) at 100 Hz, so tau = 1/(2π·100).
             head: CoreSpec {
                 tau: 1.0 / (2.0 * std::f64::consts::PI * 100.0),
-                hyst: 0.25111,
-                r_max: 14.003,
-                shape: 4.0,
-                power: 0.055807,
-                sat: 56.562,
-                knee: 1.7336,
+                hyst: 0.2509,
+                r_max: 14.582,
+                shape: 3.9914,
+                power: 0.063082,
+                sat: 77.248,
+                knee: 1.4663,
                 leak_hz: 0.5,
                 plays: crate::magnetics::PLAYS,
             },
             a2_rep: 1.6e-3,
-            bump_pre: 0.3985,
+            bump_pre: 0.4598,
+            couple_hz: 4.0,
+            clip_asym: 0.08,
+            remanence: 2.5,
         }
     }
 }
@@ -154,6 +166,7 @@ pub struct TapeCircuit {
     pre: Biquad,
     de: Biquad,
     bump_rec: Biquad,
+    couple: Biquad,
     contour: Cascade<4>,
     clip: DiodeClipper,
     pub head: Core,
@@ -177,8 +190,9 @@ impl TapeCircuit {
             pre: Biquad::default(),
             de: Biquad::default(),
             bump_rec: Biquad::default(),
+            couple: Biquad::default(),
             contour: Cascade::default(),
-            clip: DiodeClipper::new(cal.clip_att),
+            clip: DiodeClipper::new(cal.clip_att, cal.clip_asym),
             head: Core::new(cal.head, fs),
             drive_peak: 0.0,
             peak_release: 0.0,
@@ -195,6 +209,8 @@ impl TapeCircuit {
         self.fs = fs;
         self.pot_smooth.set_time(0.03, fs);
         self.head.configure(self.cal.head, fs);
+        self.head.bias = self.cal.remanence;
+        self.couple.c = Analog::hp1(self.cal.couple_hz).to_digital(fs, 10.0);
         // LED meter: instant attack, ~13 dB/s fall (classic LED bar ballistics).
         self.peak_release = (-1.0 / (0.35 * fs)).exp();
         self.update_emphasis();
@@ -205,6 +221,7 @@ impl TapeCircuit {
         self.pre.reset();
         self.de.reset();
         self.bump_rec.reset();
+        self.couple.reset();
         self.contour.reset();
         self.clip.reset();
         self.head.reset();
@@ -273,7 +290,7 @@ impl TapeCircuit {
         self.drive_peak = if a > self.drive_peak { a } else { self.drive_peak * self.peak_release };
 
         // Saturation transformer: flux-domain hysteresis + saturation.
-        let replay = self.head.process(rec);
+        let replay = self.head.process(self.couple.process(rec));
 
         // RECOVERY amplifier: inverse gain, de-emphasis, replay contour.
         let out = self.contour.process(self.de.process(replay / drive));

@@ -1,5 +1,7 @@
-//! Jardim Sonoro 542 — component-level model of the Rupert Neve Designs 542
-//! Tape Emulator (500 series), dual channel.
+//! Snow 653 (Jardim Sonoro) — dual-channel vintage tape emulator. Starts
+//! from a component-level model of the Rupert Neve Designs 542 Tape Emulator
+//! (500 series), calibrated to its published AP plots, and adds the
+//! character of an aged, hand-matched unit where no measurement exists.
 //!
 //! Signal chain per channel (see `channel.rs`): mu-metal input transformer →
 //! Class-A TRIM stage → tape circuit (DRIVE amp with IPS pre-emphasis and
@@ -53,7 +55,7 @@ pub enum SilkModeEnum {
 }
 
 #[derive(Params)]
-pub struct Neve542Params {
+pub struct Snow653Params {
     // --- Master / Routing Controls ---
     #[param(name = "Processing Mode", short_name = "Mode")]
     pub mode: EnumParam<ProcessingMode>,
@@ -198,18 +200,18 @@ pub struct Neve542Params {
     pub level_meter_b: MeterSlot,
 }
 
-use Neve542ParamsParamId as P;
+use Snow653ParamsParamId as P;
 
-pub struct Neve542;
+pub struct Snow653;
 
-pub struct Neve542Dsp {
+pub struct Snow653Dsp {
     pub channels: [Channel; 2],
     pub sample_rate: f64,
 }
 
-impl Default for Neve542Dsp {
+impl Default for Snow653Dsp {
     fn default() -> Self {
-        Self { channels: [Channel::new(48_000.0), Channel::new(48_000.0)], sample_rate: 48_000.0 }
+        Self { channels: [Channel::for_unit(48_000.0, 0), Channel::for_unit(48_000.0, 1)], sample_rate: 48_000.0 }
     }
 }
 
@@ -228,7 +230,7 @@ fn silk(v: SilkModeEnum) -> SilkMode {
     }
 }
 
-fn controls_a(p: &Neve542Params) -> Controls {
+fn controls_a(p: &Snow653Params) -> Controls {
     Controls {
         trim_db: p.trim_a.value() as f64,
         tape_in: p.tape_in_a.value(),
@@ -241,7 +243,7 @@ fn controls_a(p: &Neve542Params) -> Controls {
     }
 }
 
-fn controls_b(p: &Neve542Params) -> Controls {
+fn controls_b(p: &Snow653Params) -> Controls {
     Controls {
         trim_db: p.trim_b.value() as f64,
         tape_in: p.tape_in_b.value(),
@@ -254,16 +256,16 @@ fn controls_b(p: &Neve542Params) -> Controls {
     }
 }
 
-impl PluginLogic for Neve542 {
-    type Params = Neve542Params;
-    type DspState = Neve542Dsp;
+impl PluginLogic for Snow653 {
+    type Params = Snow653Params;
+    type DspState = Snow653Dsp;
 
     fn reset(state: &mut Self::DspState, params: &Self::Params, config: &AudioConfig) {
         state.sample_rate = config.sample_rate;
         let (a, b) = (controls_a(params), controls_b(params));
         let stereo = params.mode.value() == ProcessingMode::Stereo;
         for (i, ch) in state.channels.iter_mut().enumerate() {
-            *ch = Channel::new(config.sample_rate);
+            *ch = Channel::for_unit(config.sample_rate, i);
             ch.set_controls(if i == 0 || stereo { a } else { b });
             ch.reset();
         }
@@ -323,14 +325,14 @@ impl PluginLogic for Neve542 {
         ProcessStatus::Normal
     }
 
-    fn editor(params: Arc<Neve542Params>) -> Box<dyn Editor> {
+    fn editor(params: Arc<Snow653Params>) -> Box<dyn Editor> {
         ui::editor(params)
     }
 }
 
 truce::plugin! {
-    logic: Neve542,
-    params: Neve542Params,
+    logic: Snow653,
+    params: Snow653Params,
 }
 
 truce::enable_rt_paranoid!();

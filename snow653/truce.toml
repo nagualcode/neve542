@@ -5,11 +5,11 @@ url = "https://github.com/nagualcode/neve542"
 au_manufacturer = "JdSo"
 
 [[plugin]]
-name = "Neve542"
-bundle_id = "neve542"
-crate = "neve542"
+name = "Snow 653"
+bundle_id = "snow653"
+crate = "snow653"
 category = "effect"
-fourcc = "Neve"
+fourcc = "S653"
 au_tag = "Effects"
 # VST3 secondary subcategory — drives the Cubase plugin submenu.
 # Tighten to your effect kind: "Delay", "Distortion", "Dynamics",
