@@ -1,15 +1,15 @@
 [vendor]
 name = "Jardim Sonoro"
 id = "com.jardimsonoro"
-url = "https://github.com/nagualcode/snow653"
+url = "https://github.com/nagualcode/neve542"
 au_manufacturer = "JdSo"
 
 [[plugin]]
-name = "Snow 653"
-bundle_id = "snow653"
-crate = "snow653"
+name = "NEVE542"
+bundle_id = "neve542"
+crate = "neve542"
 category = "effect"
-fourcc = "S653"
+fourcc = "N542"
 au_tag = "Effects"
 # VST3 secondary subcategory — drives the Cubase plugin submenu.
 # Tighten to your effect kind: "Delay", "Distortion", "Dynamics",

@@ -1,8 +1,8 @@
-# Snow 653 — Vintage Dual Tape Emulator (Jardim Sonoro)
+# NEVE542 — Vintage Dual Tape Emulator (Jardim Sonoro)
 
-> A dual-channel tape and transformer emulator in Rust on the [truce](https://github.com/truce-audio/truce) framework. At its core is a component-level model of the Rupert Neve Designs 542 Tape Emulator (500 series), calibrated against the **hardware's** published Audio Precision measurements rather than against another plug-in. Where no measurement exists, Snow 653 makes documented choices for the sound of an aged, hand-matched unit; see [Character](#character-the-vintage-unit).
+> A dual-channel tape and transformer emulator in Rust on the [truce](https://github.com/truce-audio/truce) framework. At its core is a component-level model of the Rupert Neve Designs 542 Tape Emulator (500 series), calibrated against the **hardware's** published Audio Precision measurements rather than against another plug-in. Where no measurement exists, NEVE542 makes documented choices for the sound of an aged, hand-matched unit; see [Character](#character-the-vintage-unit).
 >
-> Snow 653 is an independent product. It is not affiliated with or endorsed by Rupert Neve Designs, and "542" and "Rupert Neve" are mentioned only to identify the hardware that was modelled.
+> NEVE542 is an independent product. It is not affiliated with or endorsed by Rupert Neve Designs, and "542" and "Rupert Neve" are mentioned only to identify the hardware that was modelled.
 
 Formats: AU · VST3 · CLAP · Standalone (macOS). Modes: Dual Mono · Stereo · Mid/Side, with offset-preserving Link.
 
@@ -63,7 +63,7 @@ CPU: about 0.5 % (tape out) to about 4.7 % (Saturation MAX + SILK) of one Apple-
 
 ## Character: the vintage unit
 
-No 542 was available to measure. The published plots fix the frequency response and the THD at 0 dBu, but not the harmonic balance, the behaviour above 0 dBu, noise, or unit variation. For those, Snow 653 reverse-engineers the RND plug-in where it is informative and otherwise makes choices drawn from the hardware literature, reviews and forum lore. The result is meant to sound like a well-used, hand-matched unit, and every choice is listed here.
+No 542 was available to measure. The published plots fix the frequency response and the THD at 0 dBu, but not the harmonic balance, the behaviour above 0 dBu, noise, or unit variation. For those, NEVE542 reverse-engineers the RND plug-in where it is informative and otherwise makes choices drawn from the hardware literature, reviews and forum lore. The result is meant to sound like a well-used, hand-matched unit, and every choice is listed here.
 
 **What the RND plug-in measures like** (`analyzer.py`, warmed up and with silence between tones):
 - A static waveshaper with a threshold. It is clean (< 0.01 %) up to about +6 dBu at Saturation MIN and then mostly H3 + H5, identical at 1 kHz and 5 kHz.
@@ -99,7 +99,7 @@ Not modelled on purpose: wow and flutter, dropouts and tape hiss modulation. The
 - Reverse engineering of the RND 542 plug-in (harmonics vs level, pot taper, IMD, SILK, Blend, latency, noise), and forum and press discussion (Gearspace, GroupDIY, Steve Hoffman forums, Tape Op, Jensen/Whitlock transformer notes) for the Character choices.
 - No schematic of the 542 or 5042 has been published. Earlier versions of this README cited "US Patent 7,454,025" for Silk. **That was wrong.** US 7,454,025 is a Panasonic loudspeaker patent and has nothing to do with Neve.
 
-### Signal chain (per channel, `snow653/src/channel.rs`)
+### Signal chain (per channel, `neve542/src/channel.rs`)
 
 ```
 IN → input transformer (mu-metal: 0.8 Hz HP, tiny hysteresis) → Class-A TRIM stage (±16 V rails)
@@ -136,10 +136,10 @@ The panel is drawn with egui. Each channel is one row in signal-flow order: INPU
 
 ```bash
 cargo install cargo-truce
-cd snow653
+cd neve542
 cargo truce install --au2             # AU into ~/Library/Audio/Plug-Ins/Components
 cargo truce build --au2 --vst3 --clap # all bundles into target/bundles/
-cargo run --bin snow653-standalone --features standalone
+cargo run --bin neve542-standalone --features standalone
 ```
 
 ## Measuring and calibrating
@@ -155,4 +155,4 @@ python3 tools/fit/fit_silk.py                              # refit SILK curves
 ```
 
 ## Credits & license
-Modelled hardware: the 542 Tape Emulator by Rupert Neve (1926–2021) and Rupert Neve Designs. Snow 653 is an independent product, not affiliated with or endorsed by RND. DSP, Rust implementation and UI: Jardim Sonoro ([nagualcode](https://github.com/nagualcode)). MIT license.
+Modelled hardware: the 542 Tape Emulator by Rupert Neve (1926–2021) and Rupert Neve Designs. NEVE542 is an independent product, not affiliated with or endorsed by RND. DSP, Rust implementation and UI: Jardim Sonoro ([nagualcode](https://github.com/nagualcode)). MIT license.

@@ -4,9 +4,9 @@
 //! cargo run --release --example probe -- [sr=96000] [ips=15] [sat=0] [level=0]
 //!     [tape=1] [silk=off|red|blue] [tex=0] [blend=1] [trim=0] [freqs=20,50,...]
 //!     [cal.<field>=v ...]
-use snow653::channel::{Channel, Controls};
-use snow653::silk::{SilkCal, SilkMode};
-use snow653::tape::{TapeCal, TapeSpeed};
+use neve542::channel::{Channel, Controls};
+use neve542::silk::{SilkCal, SilkMode};
+use neve542::tape::{TapeCal, TapeSpeed};
 use std::f64::consts::PI;
 
 fn fit(y: &[f64], f: f64, sr: f64) -> [f64; 6] {

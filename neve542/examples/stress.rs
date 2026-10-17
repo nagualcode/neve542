@@ -1,9 +1,9 @@
 //! Robustness + CPU check: every control combination at every common rate,
 //! fed with silence, DC, full-scale noise, +12 dBFS square bursts and
 //! denormal-range input. Fails on NaN/Inf or runaway output.
-use snow653::channel::{Channel, Controls};
-use snow653::silk::SilkMode;
-use snow653::tape::TapeSpeed;
+use neve542::channel::{Channel, Controls};
+use neve542::silk::SilkMode;
+use neve542::tape::TapeSpeed;
 use std::time::Instant;
 
 fn main() {
