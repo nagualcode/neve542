@@ -1,0 +1,24 @@
+uuid = "11b62cf3-dff6-4f78-8210-3ae586d1b4dd"
+name = "MS Lift"
+category = "Mastering"
+comment = "Settings from the RND 542 plug-in factory bank"
+
+[params]
+mode = 2
+link = false
+trim_a = 0.0
+tape_in_a = true
+saturation_a = 0.0
+ips_a = 0
+blend_a = 0.05
+silk_a = 1
+texture_a = 0.595
+output_a = 0.0
+trim_b = 0.0
+tape_in_b = true
+saturation_b = 0.291
+ips_b = 1
+blend_b = 0.299
+silk_b = 1
+texture_b = 0.348
+output_b = 2.0

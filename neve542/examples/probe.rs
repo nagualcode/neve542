@@ -29,6 +29,7 @@ fn main() {
     let mut sr = 96_000.0;
     let mut ctl = Controls::default();
     let mut level = 0.0;
+    let mut settle_s = 0.4;
     let mut tape = TapeCal::default();
     let mut silk = SilkCal::default();
     let mut freqs: Vec<f64> = vec![20., 31.5, 50., 100., 200., 500., 1000., 3000., 10000., 20000.];
@@ -40,6 +41,7 @@ fn main() {
             "ips" => ctl.speed = if num() > 20.0 { TapeSpeed::Ips30 } else { TapeSpeed::Ips15 },
             "sat" => ctl.saturation = num(),
             "level" => level = num(),
+            "settle" => settle_s = num(),
             "tape" => ctl.tape_in = num() > 0.5,
             "blend" => ctl.blend = num(),
             "trim" => ctl.trim_db = num(),
@@ -75,6 +77,7 @@ fn main() {
             "bump_pre" => tape.bump_pre = num(),
             "couple_hz" => tape.couple_hz = num(),
             "clip_asym" => tape.clip_asym = num(),
+            "clip_rd" => tape.clip_rd = num(),
             "remanence" => tape.remanence = num(),
             "silk.knee" => silk.core.knee = num(),
             "drive" => {
@@ -106,7 +109,7 @@ fn main() {
         ch.set_controls(ctl);
         ch.reset();
         ch.snap();
-        let settle = ((0.4 * sr) as usize).max((8.0 * sr / f) as usize);
+        let settle = ((settle_s * sr) as usize).max((8.0 * sr / f) as usize);
         let cycles = (f * 0.25).max(20.0).round();
         let n = (cycles * sr / f).round() as usize;
         let mut y = Vec::with_capacity(n);

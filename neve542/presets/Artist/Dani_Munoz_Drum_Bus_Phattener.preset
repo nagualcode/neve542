@@ -1,0 +1,24 @@
+uuid = "a287af0e-2930-4387-bfc7-cdfbcfe99c21"
+name = "Drum Bus Phattener"
+category = "Artist"
+comment = "Settings from the RND 542 plug-in artist bank (Dani Munoz)"
+
+[params]
+mode = 1
+link = true
+trim_a = 6.3
+tape_in_a = true
+saturation_a = 0.751
+ips_a = 0
+blend_a = 0.381
+silk_a = 2
+texture_a = 0.907
+output_a = -5.0
+trim_b = 6.3
+tape_in_b = true
+saturation_b = 0.751
+ips_b = 0
+blend_b = 0.381
+silk_b = 1
+texture_b = 0.104
+output_b = -5.0

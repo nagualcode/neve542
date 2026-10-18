@@ -65,6 +65,9 @@ pub struct TapeCal {
     pub couple_hz: f64,
     /// Diode-pair mismatch Is₂/Is₁ (sets the clip's 2nd harmonic).
     pub clip_asym: f64,
+    /// Series resistance of the clip diodes, relative to the feed resistor
+    /// (0 = classic shunt clip that limits; > 0 = slope reduction past the knee).
+    pub clip_rd: f64,
     /// Remanent flux of the record head (flux units, 0 dBu @ 100 Hz = 1).
     pub remanence: f64,
 }
@@ -74,43 +77,44 @@ impl Default for TapeCal {
         TapeCal {
             knots: [0.0, 0.3, 0.7, 1.0],
             // Drive meter reads 2, 2, 3, 6 at these positions (RND AP plot legend).
-            drive_db: [0.0, 2.99, 5.99, 13.95],
+            drive_db: [0.0, 2.99, 5.99, 14.2],
             contour15: [
-                [5.89196, 0.5407, 66.972, 5.4204, 0.310729, 59810.6, 0.3, 4816.73, 0.295496],
-                [2.73857, 0.30001, 65.8491, 4.34262, 0.332088, 52944.0, 0.369333, 36896.4, -1.0],
-                [5.42268, 0.502448, 62.7591, 3.1073, 0.367952, 55377.2, 0.3, 29255.4, -1.0],
-                [4.51656, 0.3, 64.8071, 1.92733, 0.51632, 50997.4, 0.3, 2977.72, 0.470166],
+                [5.84603, 0.540648, 66.8045, 5.43916, 0.309236, 59804.8, 0.3, 4556.05, 0.322074],
+                [2.72069, 0.3, 65.5527, 4.3589, 0.32972, 51021.2, 0.389397, 37476.8, -1.0],
+                [5.63844, 0.515164, 62.3566, 3.12508, 0.3653, 55434.6, 0.3, 30324.1, -1.0],
+                [4.64557, 0.3, 63.033, 1.94752, 0.512628, 51138.9, 0.3, 3106.75, 0.489189],
             ],
             contour30: [
-                [5.00351, 0.3, 131.794, 3.97849, 0.278733, 155281.0, 0.3, 2000.0, 0.252059],
-                [5.22954, 0.3, 139.016, 3.15867, 0.310084, 62687.5, 0.691403, 2782.8, 0.609144],
-                [4.83268, 0.3, 149.25, 2.14634, 0.370563, 63431.8, 0.683733, 2000.0, 0.50498],
-                [5.2401, 0.3, 162.122, 1.23775, 0.380191, 52626.2, 0.769972, 2027.23, 0.395573],
+                [4.96177, 0.3, 131.957, 3.98874, 0.277843, 155346.0, 0.3, 2000.0, 0.280088],
+                [5.19007, 0.3, 138.885, 3.16545, 0.30806, 61748.5, 0.696448, 2702.33, 0.633127],
+                [4.80275, 0.3, 148.673, 2.14808, 0.3659, 63794.8, 0.683725, 2000.0, 0.529512],
+                [5.33925, 0.3, 155.818, 1.2092, 0.362535, 53088.1, 0.766196, 2102.51, 0.406092],
             ],
             // NAB 15 ips (50 µs) and AES 30 ips (17.5 µs) record pre-emphasis,
             // shelved by the drive amplifier's feedback network; the 15 ips
             // shelf and the clip threshold are fitted to the Saturation MAX
             // THD rise above 1 kHz together with its frequency response.
-            emph15: (50e-6, 2.998e-05),
+            emph15: (50e-6, 2.906e-05),
             emph30: (17.5e-6, 12e-6),
-            clip_att: 0.05135,
+            clip_att: 0.0492,
             // Fitted by tools/fit/fit_thd.py to all four THD curves. Flux unit:
             // 0 dBu (1.0954 V peak) at 100 Hz, so tau = 1/(2π·100).
             head: CoreSpec {
                 tau: 1.0 / (2.0 * std::f64::consts::PI * 100.0),
-                hyst: 0.2509,
-                r_max: 14.582,
-                shape: 3.9914,
-                power: 0.063082,
-                sat: 77.248,
-                knee: 1.4663,
+                hyst: 0.24948,
+                r_max: 14.759,
+                shape: 3.9965,
+                power: 0.09817,
+                sat: 107.13,
+                knee: 1.2873,
                 leak_hz: 0.5,
                 plays: crate::magnetics::PLAYS,
             },
             a2_rep: 1.6e-3,
-            bump_pre: 0.4598,
+            bump_pre: 0.4147,
             couple_hz: 4.0,
             clip_asym: 0.08,
+            clip_rd: 0.004979,
             remanence: 2.5,
         }
     }
@@ -192,7 +196,7 @@ impl TapeCircuit {
             bump_rec: Biquad::default(),
             couple: Biquad::default(),
             contour: Cascade::default(),
-            clip: DiodeClipper::new(cal.clip_att, cal.clip_asym),
+            clip: DiodeClipper::with_rd(cal.clip_att, cal.clip_asym, cal.clip_rd),
             head: Core::new(cal.head, fs),
             drive_peak: 0.0,
             peak_release: 0.0,

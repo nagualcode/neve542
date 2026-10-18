@@ -1,0 +1,24 @@
+uuid = "5e131ffe-0f54-4395-987b-8b19706fc53f"
+name = "That Is Better"
+category = "Mastering"
+comment = "Settings from the RND 542 plug-in factory bank"
+
+[params]
+mode = 1
+link = true
+trim_a = 2.0
+tape_in_a = true
+saturation_a = 0.203
+ips_a = 1
+blend_a = 0.1
+silk_a = 2
+texture_a = 0.0
+output_a = -1.0
+trim_b = 2.0
+tape_in_b = true
+saturation_b = 0.203
+ips_b = 1
+blend_b = 0.1
+silk_b = 2
+texture_b = 0.0
+output_b = -1.0

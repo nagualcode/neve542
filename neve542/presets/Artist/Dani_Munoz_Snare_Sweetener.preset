@@ -1,0 +1,24 @@
+uuid = "fd131a2a-ef0e-43a8-9b6b-434a192f0726"
+name = "Snare Sweetener"
+category = "Artist"
+comment = "Settings from the RND 542 plug-in artist bank (Dani Munoz)"
+
+[params]
+mode = 1
+link = true
+trim_a = 3.0
+tape_in_a = true
+saturation_a = 1.0
+ips_a = 1
+blend_a = 0.71
+silk_a = 2
+texture_a = 1.0
+output_a = -2.0
+trim_b = 3.0
+tape_in_b = true
+saturation_b = 1.0
+ips_b = 1
+blend_b = 0.71
+silk_b = 2
+texture_b = 1.0
+output_b = -2.2

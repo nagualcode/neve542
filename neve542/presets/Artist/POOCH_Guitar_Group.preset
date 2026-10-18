@@ -1,0 +1,24 @@
+uuid = "be690c8f-8b3e-4c4d-89fa-b3dc9c90ca27"
+name = "Guitar Group"
+category = "Artist"
+comment = "Settings from the RND 542 plug-in artist bank (POOCH)"
+
+[params]
+mode = 1
+link = true
+trim_a = 0.0
+tape_in_a = true
+saturation_a = 0.1996
+ips_a = 0
+blend_a = 0.5004
+silk_a = 1
+texture_a = 0.4999
+output_a = 0.0
+trim_b = 0.0
+tape_in_b = true
+saturation_b = 0.1996
+ips_b = 0
+blend_b = 0.5004
+silk_b = 1
+texture_b = 0.4999
+output_b = 0.0

@@ -1,0 +1,24 @@
+uuid = "c1a6e676-d8cd-4bff-9d5f-a8832a774e49"
+name = "What Just Happened"
+category = "Mastering"
+comment = "Settings from the RND 542 plug-in factory bank"
+
+[params]
+mode = 0
+link = true
+trim_a = 0.0
+tape_in_a = true
+saturation_a = 0.188
+ips_a = 1
+blend_a = 0.111
+silk_a = 1
+texture_a = 0.2
+output_a = 0.0
+trim_b = 0.0
+tape_in_b = true
+saturation_b = 0.188
+ips_b = 1
+blend_b = 0.111
+silk_b = 1
+texture_b = 0.2
+output_b = 0.0

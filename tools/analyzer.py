@@ -49,7 +49,11 @@ class Dut:
         for k, v in kw.items():
             if self.is_rnd:
                 if k == "mode":
-                    v = {"Dual Mono": "Dual", "Stereo": "Stereo", "M/S": "Mid/Side"}[v]
+                    # The RND plug-in's text labels for this parameter do not
+                    # match its behaviour: the value labelled "Dual" processes
+                    # mid/side (an L-only input leaks into R when A and B
+                    # differ) and "Mid/Side" keeps the channels apart.
+                    v = {"Dual Mono": "Mid/Side", "Stereo": "Stereo", "M/S": "Dual"}[v]
                 if k == "link":
                     v = "Link 1" if v else "Off"
                 setattr(self.p, k, v)

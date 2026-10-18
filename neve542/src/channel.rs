@@ -23,12 +23,17 @@ pub const VOLTS_PER_FS: f64 = 1.095_445 / 0.125_892_54;
 /// 0 dBu sine peak, in volts.
 pub const DBU0_PEAK: f64 = 1.095_445;
 
-/// Mu-metal input transformer: very high permeability, tiny loop
-/// (spec: 0.07 % THD @ 20 Hz, +20 dBu, tape out).
-pub const INPUT_CORE: CoreSpec = CoreSpec { tau: 8.0e-3, hyst: 0.004, r_max: 1.0, shape: 0.0, power: 0.0, sat: 30.0, knee: 4.0, leak_hz: 0.2, plays: 8 };
+/// Mu-metal input transformer: very high permeability, tiny loop. Fitted to
+/// the tape-out spec: 0.07 % THD @ 20 Hz, +20 dBu, "2nd & 3rd order", and
+/// better than 0.0025 % @ 1 kHz (with the line stages in series).
+pub const INPUT_CORE: CoreSpec = CoreSpec { tau: 8.0e-3, hyst: 0.001, r_max: 1.0, shape: 0.0, power: 0.0, sat: 55.0, knee: 4.0, leak_hz: 0.2, plays: 8 };
+/// Remanent flux of the input core. The spec names a 2nd harmonic at 20 Hz,
+/// which a symmetric core cannot make; a small remanence gives H2 ≈ 0.04 %
+/// next to H3 ≈ 0.05 % there.
+pub const INPUT_REMANENCE: f64 = 2.0;
 
 /// Background noise of the unit, rms in a 22 kHz band [V]. The 542 spec
-/// is "better than −100 dBV" at unity; an aged unit with tired transistors
+/// is "better than −100 dBu" at unity; an aged unit with tired transistors
 /// and carbon resistors sits a few dB above that. Half is generated ahead
 /// of TRIM (so it rises with input gain), half at the output stage.
 pub const NOISE_IN_V: f64 = 0.774_6 * 7.08e-6; // −103 dBu
@@ -150,6 +155,7 @@ impl Channel {
             noise_k: (fs / 2.0 / 22_000.0).sqrt() * 6f64.sqrt(),
             rng: 0x9E37_79B9_7F4A_7C15,
         };
+        c.in_core.bias = INPUT_REMANENCE;
         c.configure();
         c
     }

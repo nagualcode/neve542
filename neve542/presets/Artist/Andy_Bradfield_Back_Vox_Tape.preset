@@ -1,0 +1,24 @@
+uuid = "6ae41c5c-5e68-4267-a869-e75a2b20dfb3"
+name = "Back Vox Tape"
+category = "Artist"
+comment = "Settings from the RND 542 plug-in artist bank (Andy Bradfield)"
+
+[params]
+mode = 1
+link = false
+trim_a = 7.0
+tape_in_a = true
+saturation_a = 0.371
+ips_a = 0
+blend_a = 1.0
+silk_a = 0
+texture_a = 1.0
+output_a = -6.9
+trim_b = 7.0
+tape_in_b = true
+saturation_b = 0.371
+ips_b = 0
+blend_b = 1.0
+silk_b = 0
+texture_b = 1.0
+output_b = -6.9

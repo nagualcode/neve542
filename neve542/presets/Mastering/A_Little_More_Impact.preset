@@ -1,0 +1,24 @@
+uuid = "7178c1db-fa21-4b86-bd9f-6c372420d77f"
+name = "A Little More Impact"
+category = "Mastering"
+comment = "Settings from the RND 542 plug-in factory bank"
+
+[params]
+mode = 1
+link = true
+trim_a = 0.0
+tape_in_a = true
+saturation_a = 0.0
+ips_a = 1
+blend_a = 0.212
+silk_a = 1
+texture_a = 0.3
+output_a = 0.0
+trim_b = 0.0
+tape_in_b = true
+saturation_b = 0.0
+ips_b = 1
+blend_b = 0.212
+silk_b = 1
+texture_b = 0.3
+output_b = 0.0

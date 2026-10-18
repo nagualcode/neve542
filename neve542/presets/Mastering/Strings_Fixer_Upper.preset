@@ -1,0 +1,24 @@
+uuid = "d25a10a3-822c-400b-b232-1936daa8905b"
+name = "Strings Fixer Upper"
+category = "Mastering"
+comment = "Settings from the RND 542 plug-in factory bank"
+
+[params]
+mode = 1
+link = true
+trim_a = 2.0
+tape_in_a = true
+saturation_a = 0.114
+ips_a = 1
+blend_a = 0.4
+silk_a = 1
+texture_a = 0.5
+output_a = -1.0
+trim_b = 2.0
+tape_in_b = true
+saturation_b = 0.114
+ips_b = 1
+blend_b = 0.4
+silk_b = 1
+texture_b = 0.5
+output_b = -1.0

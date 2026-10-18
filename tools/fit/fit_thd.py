@@ -24,17 +24,27 @@ F = np.array([20, 25, 31.5, 40, 60, 100, 200, 500, 1000, 1500, 3000, 5000, 10000
 W = {0.0: np.ones(len(F)), 1.0: np.ones(len(F))}
 W[0.3] = W[0.7] = np.where((F >= 1500) & (F <= 5000), 0.4, 1.0)
 NAMES = ['head.hyst', 'head.r_max', 'head.shape', 'head.power', 'head.sat', 'head.knee', 'clip_att', 'emph15b', 'bump_pre',
-         'drive1', 'drive2', 'drive3']
-X0 = [0.28642, 11.175, 1.11837, 0.3, 81.7797, 1.90407, 0.0629563, 3.24913e-05, 0.8, 2.5, 4.5, 12.5]
+         'clip_rd', 'drive1', 'drive2', 'drive3']
+X0 = [0.28642, 11.175, 1.11837, 0.3, 81.7797, 1.90407, 0.0629563, 3.24913e-05, 0.8, 0.1, 2.5, 4.5, 12.5]
 # Drive meter (3 dB LEDs) reads 2, 2, 3, 6 at MIN, 10, 2 o'clock, MAX: the
 # drive gains are only known to within their LED window.
-LO = [0.02, 0.5, 0.0, 0.0, 5.0, 1.2, 0.02, 15e-6, 0.0, 0.3, 3.0, 9.0]
-HI = [0.8, 60.0, 4.0, 0.9, 300.0, 6.0, 0.2, 49e-6, 1.0, 2.99, 5.99, 14.99]
+LO = [0.02, 0.5, 0.0, 0.0, 5.0, 1.2, 0.02, 15e-6, 0.0, 0.0, 0.3, 3.0, 9.0]
+HI = [0.8, 60.0, 4.0, 0.9, 300.0, 6.0, 0.2, 49e-6, 1.0, 0.6, 2.99, 5.99, 14.99]
+# Series resistance of the clip diodes (0 = classic limiting shunt clip).
+# FIX_RD=<v> pins it, e.g. FIX_RD=0 to fit the old topology.
+import os
+FIX_RD = os.environ.get('FIX_RD')
 try:  # warm start from the previous fit
     _prev = json.load(open('tools/fit/thd_fit.json'))
     X0 = [_prev.get(n, x) for n, x in zip(NAMES, X0)]
 except FileNotFoundError:
     pass
+if FIX_RD is not None:
+    i = NAMES.index('clip_rd')
+    X0[i] = float(FIX_RD)
+    LO[i], HI[i] = float(FIX_RD) - 1e-9, float(FIX_RD) + 1e-9
+X0[NAMES.index('clip_rd')] = max(X0[NAMES.index('clip_rd')], 1e-3)
+X0 = [min(max(x, lo + 1e-12), hi - 1e-12) for x, lo, hi in zip(X0, LO, HI)]
 SCALE = np.array(X0)
 
 
@@ -82,9 +92,20 @@ def thd_all(x, resp=False):
     return out
 
 
+# The AP plot's THD axis is LINEAR, 0-10 %: one pixel is ~0.02 % and the trace
+# is ~0.1 % thick, so a reading of 0.1 % is only known to about +-0.05 %.
+# Error model: an absolute part (digitisation) plus a 10 % relative part.
+SIGMA_ABS, SIGMA_REL = 0.05, 0.10
+
+
+def sigma(t):
+    return np.sqrt(SIGMA_ABS ** 2 + (SIGMA_REL * t) ** 2)
+
+
 def resid(u):
     m = thd_all(u * SCALE, resp=True)
-    r = [W[p] * (np.log(m[p]) - np.log(TGT[p])) for _, p in POTS]
+    # x 0.1 keeps the THD and response terms in the same balance as before.
+    r = [0.1 * W[p] * (m[p] - TGT[p]) / sigma(TGT[p]) for _, p in POTS]
     # Saturation MAX is off the plot's 10 % full scale below ~29 Hz.
     r[-1][F < 29] = np.minimum(0.0, np.log(m[1.0][F < 29]) - np.log(10.0))
     r += [(m[f'r{i}'] - TGT_R[i]) / FR_TOL_DB * 0.1 for i in (15, 30)]
@@ -92,16 +113,23 @@ def resid(u):
 
 
 if __name__ == '__main__':
-    r = least_squares(resid, np.ones(len(X0)), bounds=(np.array(LO) / SCALE, np.array(HI) / SCALE),
-                      diff_step=0.03, max_nfev=60, verbose=1)
-    x = r.x * SCALE
+    if '--eval' in sys.argv:  # report the current parameters without fitting
+        x = np.array(X0)
+    else:
+        r = least_squares(resid, np.ones(len(X0)), bounds=(np.array(LO) / SCALE, np.array(HI) / SCALE),
+                          diff_step=0.03, max_nfev=60, verbose=1)
+        x = r.x * SCALE
     print('fitted:', ' '.join(f'{n}={v:.6g}' for n, v in zip(NAMES, x)))
     m = thd_all(x, resp=True)
     for i in (15, 30):
         print(f'Sat MAX {i} ips response error (dB) @', ' '.join(f'{f:g}' for f in FR), ':',
               ' '.join(f'{v:+.2f}' for v in m[f'r{i}'] - TGT_R[i]))
     print('Hz      ' + ' '.join(f'{f:6.0f}' for f in F))
+    db = np.concatenate([20 * np.log10(m[p] / TGT[p])[(TGT[p] < 9.99)] for _, p in POTS])
+    chi = np.concatenate([(m[p] - TGT[p]) / sigma(TGT[p]) for _, p in POTS])
+    print(f'THD error: rms {np.sqrt(np.mean(db**2)):.2f} dB, rms {np.sqrt(np.mean(chi**2)):.2f} sigma')
     for _, p in POTS:
         print(f'hw  {p:.1f} ' + ' '.join(f'{v:6.2f}' for v in TGT[p]))
         print(f'fit {p:.1f} ' + ' '.join(f'{v:6.2f}' for v in m[p]))
-    json.dump(dict(zip(NAMES, map(float, x))), open('tools/fit/thd_fit.json', 'w'), indent=1)
+    if '--eval' not in sys.argv:
+        json.dump(dict(zip(NAMES, map(float, x))), open('tools/fit/thd_fit.json', 'w'), indent=1)

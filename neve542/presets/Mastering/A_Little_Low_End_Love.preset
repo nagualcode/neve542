@@ -1,0 +1,24 @@
+uuid = "0d82f9b9-6d81-47e8-b2b4-d992e3b74c6b"
+name = "A Little Low End Love"
+category = "Mastering"
+comment = "Settings from the RND 542 plug-in factory bank"
+
+[params]
+mode = 0
+link = false
+trim_a = 0.0
+tape_in_a = true
+saturation_a = 0.0
+ips_a = 1
+blend_a = 0.203
+silk_a = 0
+texture_a = 0.0
+output_a = 0.0
+trim_b = 0.0
+tape_in_b = true
+saturation_b = 0.0
+ips_b = 1
+blend_b = 0.203
+silk_b = 0
+texture_b = 0.0
+output_b = 0.0

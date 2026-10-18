@@ -1,0 +1,24 @@
+uuid = "cedb9d5b-4d50-4ab7-8b14-d7e160ca61ec"
+name = "542 Default"
+category = "Default"
+comment = "Settings from the RND 542 plug-in factory bank"
+
+[params]
+mode = 1
+link = true
+trim_a = 0.0
+tape_in_a = true
+saturation_a = 0.0
+ips_a = 0
+blend_a = 1.0
+silk_a = 0
+texture_a = 0.0
+output_a = 0.0
+trim_b = 0.0
+tape_in_b = true
+saturation_b = 0.0
+ips_b = 0
+blend_b = 1.0
+silk_b = 0
+texture_b = 0.0
+output_b = 0.0

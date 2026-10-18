@@ -1,0 +1,24 @@
+uuid = "26f629e8-fe5d-4afa-93db-a60de9cacc20"
+name = "Big And Smooth"
+category = "Guitar"
+comment = "Settings from the RND 542 plug-in factory bank"
+
+[params]
+mode = 1
+link = false
+trim_a = 0.0
+tape_in_a = true
+saturation_a = 0.209
+ips_a = 0
+blend_a = 0.5
+silk_a = 1
+texture_a = 0.25
+output_a = 0.0
+trim_b = 0.0
+tape_in_b = true
+saturation_b = 0.209
+ips_b = 0
+blend_b = 0.5
+silk_b = 1
+texture_b = 0.25
+output_b = 0.0

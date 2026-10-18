@@ -1,0 +1,24 @@
+uuid = "f406f198-a16c-4e92-99fa-fada764dc79b"
+name = "Bass Anchor"
+category = "Artist"
+comment = "Settings from the RND 542 plug-in artist bank (John O'Mahony)"
+
+[params]
+mode = 1
+link = false
+trim_a = 0.0
+tape_in_a = true
+saturation_a = 0.75
+ips_a = 0
+blend_a = 0.5
+silk_a = 0
+texture_a = 0.15
+output_a = 0.0
+trim_b = 0.0
+tape_in_b = true
+saturation_b = 0.75
+ips_b = 0
+blend_b = 0.5
+silk_b = 0
+texture_b = 0.15
+output_b = 0.0

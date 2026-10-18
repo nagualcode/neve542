@@ -1,0 +1,24 @@
+uuid = "68c481f3-41fe-41a5-87d6-c4f8d99b88a1"
+name = "Lead Vox Tape Warmth"
+category = "Artist"
+comment = "Settings from the RND 542 plug-in artist bank (Andy Bradfield)"
+
+[params]
+mode = 1
+link = false
+trim_a = 5.3
+tape_in_a = true
+saturation_a = 0.309
+ips_a = 0
+blend_a = 1.0
+silk_a = 2
+texture_a = 0.618
+output_a = -5.0
+trim_b = 5.476
+tape_in_b = true
+saturation_b = 0.309
+ips_b = 0
+blend_b = 1.0
+silk_b = 2
+texture_b = 0.618
+output_b = -5.0

@@ -1,0 +1,24 @@
+uuid = "521b9bbe-4eed-45dd-ba79-a2822fd7b297"
+name = "Piano Stabilizer"
+category = "Artist"
+comment = "Settings from the RND 542 plug-in artist bank (John O'Mahony)"
+
+[params]
+mode = 1
+link = false
+trim_a = 0.0
+tape_in_a = true
+saturation_a = 0.2
+ips_a = 0
+blend_a = 0.35
+silk_a = 0
+texture_a = 0.0
+output_a = 0.0
+trim_b = 0.0
+tape_in_b = true
+saturation_b = 0.2
+ips_b = 0
+blend_b = 0.35
+silk_b = 0
+texture_b = 0.0
+output_b = 0.0

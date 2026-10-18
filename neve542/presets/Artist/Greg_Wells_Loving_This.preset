@@ -1,0 +1,24 @@
+uuid = "2e335b11-31ca-479b-812e-36f4d5e74062"
+name = "Loving This"
+category = "Artist"
+comment = "Settings from the RND 542 plug-in artist bank (Greg Wells)"
+
+[params]
+mode = 0
+link = true
+trim_a = 0.0
+tape_in_a = true
+saturation_a = 0.211
+ips_a = 1
+blend_a = 0.819
+silk_a = 1
+texture_a = 0.928
+output_a = -2.1
+trim_b = 0.0
+tape_in_b = true
+saturation_b = 0.213
+ips_b = 1
+blend_b = 0.819
+silk_b = 1
+texture_b = 0.929
+output_b = -2.1

@@ -27,6 +27,7 @@ sub(r'clip_att: [0-9.e-]+,', f'clip_att: {lit(thd["clip_att"], ".4g")},')
 for k in ('hyst', 'r_max', 'shape', 'power', 'sat', 'knee'):
     sub(rf'(head: CoreSpec \{{.*?\n\s+{k}: )[^,]+,', lambda m: m.group(1) + f'{lit(thd["head." + k], ".5g")},')
 sub(r'bump_pre: [0-9.e-]+,', f'bump_pre: {lit(thd["bump_pre"], ".4g")},')
+sub(r'clip_rd: [0-9.e-]+,', f'clip_rd: {lit(thd.get("clip_rd", 0.0), ".4g")},')
 sub(r'drive_db: \[[0-9][^]]*\]', 'drive_db: [0.0, ' + ', '.join(lit(thd[f"drive{i}"], ".4g") for i in (1, 2, 3)) + ']')
 open(P, 'w').write(s)
 print('updated', P)

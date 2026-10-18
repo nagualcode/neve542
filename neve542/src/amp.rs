@@ -22,14 +22,15 @@ pub struct ClassA {
 }
 
 impl ClassA {
-    /// Input / blend amplifiers: 0.0025 % THD @ +20 dBu, max out ≈ +23.5 dBu.
-    pub const LINE: ClassA = ClassA { a2: 4.5e-6, v_pos: 15.2, v_neg: 15.8, k_pos: 18.0, k_neg: 26.0 };
+    /// Input / blend / output amplifiers. Four in series stay near the spec's
+    /// 0.0025 % THD @ 1 kHz, +20 dBu (tape out); max out ≈ +23.5 dBu.
+    pub const LINE: ClassA = ClassA { a2: 0.7e-6, v_pos: 15.2, v_neg: 15.8, k_pos: 36.0, k_neg: 48.0 };
 
     #[inline(always)]
     fn rail(x: f64, v: f64, k: f64) -> f64 {
         let r = (x / v).abs();
-        if r < 0.4 {
-            return x; // (0.4)^18 < 1e-7: the rail is not in play
+        if r < 0.6 {
+            return x; // (0.6)^36 < 1e-7: the rail is not in play
         }
         x / (1.0 + r.powf(k)).powf(1.0 / k)
     }
@@ -56,11 +57,18 @@ impl ClassA {
 /// 3rd — Sound On Sound measured exactly that on the 542 ("soft-clipping
 /// that produces second-order harmonics at higher levels").
 ///
+/// The block diagram puts the clip inside the DRIVE amplifier
+/// ("PRE-EMPHASIS/SOFT CLIP"), i.e. diodes in its feedback network. A resistor
+/// `Rd` in series with the diodes stops them from hard-limiting: past the knee
+/// the slope falls to `Rd/(R+Rd)` instead of to zero.
+///
 /// Solved per sample with damped Newton iterations warm-started from the
 /// previous sample (converges in 2–3 steps at audio rates).
 #[derive(Clone, Copy, Debug)]
 pub struct DiodeClipper {
     r: f64,
+    /// Series resistance of the diode branch, relative to `r`.
+    rd: f64,
     is1: f64,
     is2: f64,
     nvt: f64,
@@ -72,7 +80,12 @@ pub struct DiodeClipper {
 impl DiodeClipper {
     /// `asym` = Is₂/Is₁ (1 = matched pair, symmetric clip).
     pub fn new(att: f64, asym: f64) -> Self {
-        DiodeClipper { r: 10_000.0, is1: 2.52e-9, is2: 2.52e-9 * asym, nvt: 1.752 * 0.025_85, att, v: 0.0 }
+        Self::with_rd(att, asym, 0.0)
+    }
+
+    /// `rd` = series resistance of the diode branch as a fraction of `R`.
+    pub fn with_rd(att: f64, asym: f64, rd: f64) -> Self {
+        DiodeClipper { r: 10_000.0, rd: 10_000.0 * rd, is1: 2.52e-9, is2: 2.52e-9 * asym, nvt: 1.752 * 0.025_85, att, v: 0.0 }
     }
 
     pub fn reset(&mut self) {
@@ -88,7 +101,8 @@ impl DiodeClipper {
         if v.abs() > vin.abs() {
             v = vin;
         }
-        let inv_r = 1.0 / self.r;
+        // Diode junction voltage v: (vin − v) = (R + Rd)·i(v); node = v + Rd·i(v).
+        let inv_r = 1.0 / (self.r + self.rd);
         for _ in 0..6 {
             let e1 = (v / self.nvt).clamp(-40.0, 40.0).exp();
             let e2 = 1.0 / e1;
@@ -102,7 +116,10 @@ impl DiodeClipper {
             }
         }
         self.v = v;
-        v / self.att
+        if self.rd == 0.0 {
+            return v / self.att;
+        }
+        (v + self.rd * (vin - v) * inv_r) / self.att
     }
 }
 

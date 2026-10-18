@@ -1,0 +1,24 @@
+uuid = "071a2191-7e8b-4b80-8364-ced8d2397d90"
+name = "Presence"
+category = "Vocals"
+comment = "Settings from the RND 542 plug-in factory bank"
+
+[params]
+mode = 1
+link = false
+trim_a = 4.0
+tape_in_a = true
+saturation_a = 0.5
+ips_a = 1
+blend_a = 0.65
+silk_a = 1
+texture_a = 0.325
+output_a = -2.0
+trim_b = 4.0
+tape_in_b = true
+saturation_b = 0.5
+ips_b = 1
+blend_b = 0.65
+silk_b = 1
+texture_b = 0.325
+output_b = -2.0

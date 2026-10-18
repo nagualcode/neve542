@@ -1,0 +1,24 @@
+uuid = "83826d78-9ce4-4daf-b068-6bffe74a865e"
+name = "Drum Bus Bump"
+category = "Drums"
+comment = "Settings from the RND 542 plug-in factory bank"
+
+[params]
+mode = 1
+link = true
+trim_a = 1.0
+tape_in_a = true
+saturation_a = 0.313
+ips_a = 0
+blend_a = 0.505
+silk_a = 1
+texture_a = 0.32
+output_a = -1.0
+trim_b = 1.0
+tape_in_b = true
+saturation_b = 0.313
+ips_b = 0
+blend_b = 0.505
+silk_b = 1
+texture_b = 0.32
+output_b = -1.0

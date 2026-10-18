@@ -1,0 +1,24 @@
+uuid = "ea90147f-44e8-491d-9f44-eb5bc743702f"
+name = "Snare Top More Thwack"
+category = "Drums"
+comment = "Settings from the RND 542 plug-in factory bank"
+
+[params]
+mode = 1
+link = false
+trim_a = 5.0
+tape_in_a = true
+saturation_a = 0.418
+ips_a = 0
+blend_a = 1.0
+silk_a = 1
+texture_a = 1.0
+output_a = -3.0
+trim_b = 5.0
+tape_in_b = true
+saturation_b = 0.418
+ips_b = 0
+blend_b = 1.0
+silk_b = 1
+texture_b = 1.0
+output_b = -3.0

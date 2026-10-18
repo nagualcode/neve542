@@ -1,0 +1,24 @@
+uuid = "68e5aba1-4eda-4334-ac8b-9e457e9ed2ec"
+name = "Smooth Guitar"
+category = "Artist"
+comment = "Settings from the RND 542 plug-in artist bank (Kevin Madigan)"
+
+[params]
+mode = 1
+link = false
+trim_a = 0.0
+tape_in_a = true
+saturation_a = 0.6
+ips_a = 0
+blend_a = 0.701
+silk_a = 0
+texture_a = 0.0
+output_a = 0.0
+trim_b = 0.0
+tape_in_b = true
+saturation_b = 0.6
+ips_b = 0
+blend_b = 0.701
+silk_b = 0
+texture_b = 0.0
+output_b = 0.0
